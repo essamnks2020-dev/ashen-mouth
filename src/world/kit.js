@@ -174,8 +174,8 @@ export function stairs(ctx, spec) {
   const zMid = (zBot + zTop) * 0.5;
   const yMid = (yLow + yHigh) * 0.5 + 0.04;
   for (const side of [-1, 1]) {
-    const sx = x + side * (w * 0.5 - 0.03);
-    const str = box(ctx, ctx.mats.woodDark, sx, yMid, zMid, 0.05, 0.22, len, P);
+    const sx = x + side * (w * 0.5 - 0.04);
+    const str = box(ctx, ctx.mats.woodDark, sx, yMid, zMid, 0.08, 0.28, len, P);
     str.rotation.x = dirZ < 0 ? pitch : -pitch;
   }
 
@@ -217,11 +217,11 @@ export function ceilingLamp(ctx, x, y, z, opts = {}) {
   cyl(ctx, ctx.mats.brass, x, y - 0.08, z, 0.018, 0.018, 0.16, { cast: false });
   cyl(ctx, ctx.mats.lampShade, x, y - 0.22, z, 0.22, 0.12, 0.18, { cast: false });
   const color = opts.color ?? 0xffe1b0;
-  const base = opts.base ?? 1.7;
-  const L = new THREE.PointLight(color, base, opts.dist ?? 8.5, 1.5);
+  const base = opts.base ?? 2.15;
+  const L = new THREE.PointLight(color, base, opts.dist ?? 9.5, 1.45);
   L.position.set(x, y - 0.28, z);
   ctx.root.add(L);
-  ctx.lights.push({ light: L, base, flicker: opts.flicker ?? 0.025, id: opts.id, toggle: !!opts.toggle, on: true });
+  ctx.lights.push({ light: L, base, flicker: opts.flicker ?? 0.02, id: opts.id, toggle: !!opts.toggle, on: true });
 }
 
 export function placeWindow(ctx, spec) {
@@ -239,24 +239,38 @@ export function placeWindow(ctx, spec) {
     x = spec.xFace; z = spec.c; ww = 0.08; wd = w + 0.1; inward = -1;
   }
   const isWE = spec.wall === 'w' || spec.wall === 'e';
-  box(ctx, ctx.mats.wood, x, y, z, isWE ? 0.09 : w + 0.12, h + 0.12, isWE ? w + 0.12 : 0.09, { collide: false, cast: false });
-  box(ctx, ctx.mats.woodDark, x, spec.y + WIN_SILL - 0.04, z + (isWE ? 0 : inward * 0.04),
-    isWE ? 0.12 : w + 0.16, 0.06, isWE ? w + 0.16 : 0.12, { collide: false });
-  // Recess glass slightly into the wall so the frame reads from the street.
-  const inset = isWE ? inward * 0.03 : inward * 0.03;
+  // Deep casing + sill so windows read as openings, not stickers.
+  box(ctx, ctx.mats.wood, x, y, z, isWE ? 0.12 : w + 0.18, h + 0.2, isWE ? w + 0.18 : 0.12, { collide: false, cast: false });
+  box(ctx, ctx.mats.woodDark, x, spec.y + WIN_SILL - 0.05, z + (isWE ? 0 : inward * 0.05),
+    isWE ? 0.14 : w + 0.22, 0.08, isWE ? w + 0.22 : 0.14, { collide: false });
+  box(ctx, ctx.mats.woodDark, x, spec.y + WIN_HEAD + 0.04, z + (isWE ? 0 : inward * 0.03),
+    isWE ? 0.12 : w + 0.18, 0.06, isWE ? w + 0.18 : 0.12, { collide: false, cast: false });
+  // Dark reveal behind glass
+  const dark = box(ctx, ctx.mats.soot, x + (isWE ? inward * 0.02 : 0), y, z + (isWE ? 0 : inward * 0.02),
+    isWE ? 0.04 : w - 0.06, h - 0.08, isWE ? w - 0.06 : 0.04, { collide: false, cast: false });
+  dark.castShadow = false;
+  const inset = inward * 0.04;
   const gx = isWE ? x + inset : x;
   const gz = isWE ? z : z + inset;
   const glass = box(ctx, ctx.mats.glassWarm, gx, y, gz,
-    isWE ? 0.02 : w - 0.1, h - 0.12, isWE ? w - 0.1 : 0.02, { collide: false, cast: false });
+    isWE ? 0.02 : w - 0.14, h - 0.16, isWE ? w - 0.14 : 0.02, { collide: false, cast: false });
   glass.castShadow = false;
-  const glow = box(ctx, ctx.mats.windowGlow, gx, y, gz,
-    isWE ? 0.015 : w - 0.18, h - 0.2, isWE ? w - 0.18 : 0.015, { collide: false, cast: false, recv: false });
+  const glow = box(ctx, ctx.mats.windowGlow, gx + (isWE ? inward * 0.01 : 0), y, gz + (isWE ? 0 : inward * 0.01),
+    isWE ? 0.015 : w - 0.22, h - 0.24, isWE ? w - 0.22 : 0.015, { collide: false, cast: false, recv: false });
   glow.castShadow = false;
-  // Muntins — crossbars so night windows don't read as solid plaques.
-  box(ctx, ctx.mats.woodDark, gx, y, gz, isWE ? 0.025 : 0.028, h - 0.14, isWE ? 0.028 : 0.025, { collide: false, cast: false });
-  box(ctx, ctx.mats.woodDark, gx, y, gz, isWE ? 0.025 : w - 0.14, 0.028, isWE ? w - 0.14 : 0.025, { collide: false, cast: false });
-  box(ctx, ctx.mats.wood, x, y, z, isWE ? 0.04 : 0.035, h - 0.08, isWE ? 0.035 : 0.04, { collide: false, cast: false });
-  box(ctx, ctx.mats.wood, x, y, z, isWE ? 0.04 : w - 0.08, 0.035, isWE ? w - 0.08 : 0.04, { collide: false, cast: false });
+  // Four-lite muntins
+  box(ctx, ctx.mats.woodDark, gx, y, gz, isWE ? 0.022 : 0.03, h - 0.18, isWE ? 0.03 : 0.022, { collide: false, cast: false });
+  box(ctx, ctx.mats.woodDark, gx, y, gz, isWE ? 0.022 : w - 0.18, 0.03, isWE ? w - 0.18 : 0.022, { collide: false, cast: false });
+  // Exterior shutter blades (thin, offset) so facade isn't bare brick + glow.
+  if (!isWE && ctx.quality !== 'low') {
+    const sx = w * 0.5 + 0.12;
+    for (const side of [-1, 1]) {
+      box(ctx, ctx.mats.woodDark, x + side * sx, y, z + inward * 0.02, 0.18, h * 0.92, 0.04, { collide: false, cast: false });
+      for (const uy of [-0.22, 0, 0.22]) {
+        box(ctx, ctx.mats.wood, x + side * sx, y + uy * h * 0.35, z + inward * 0.04, 0.14, 0.03, 0.02, { collide: false, cast: false });
+      }
+    }
+  }
 
   if (spec.curtains && ctx.quality !== 'low') {
     const cz = isWE ? z : z + inward * 0.12;
@@ -367,15 +381,17 @@ export function chair(ctx, x, y, z, rotY, mat) {
   ctx.root.add(g);
   const m = mat || ctx.mats.wood;
   const P = { parent: g, collide: false };
-  const seatH = 0.45;
-  for (const [lx, lz] of [[-0.16, -0.16], [0.16, -0.16], [-0.16, 0.16], [0.16, 0.16]]) {
-    box(ctx, m, lx, seatH * 0.5, lz, 0.038, seatH, 0.038, P);
+  const seatH = 0.46;
+  for (const [lx, lz] of [[-0.17, -0.17], [0.17, -0.17], [-0.17, 0.17], [0.17, 0.17]]) {
+    box(ctx, m, lx, seatH * 0.5, lz, 0.035, seatH, 0.035, P);
   }
-  box(ctx, m, 0, seatH, 0, 0.42, 0.045, 0.40, P);
-  box(ctx, ctx.mats.linen, 0, seatH + 0.03, 0, 0.38, 0.03, 0.36, P);
-  box(ctx, m, 0, 0.72, -0.18, 0.40, 0.50, 0.04, P);
-  for (const s of [-0.12, 0, 0.12]) box(ctx, m, s, 0.72, -0.18, 0.03, 0.42, 0.02, { ...P, cast: false });
-  ctx.world.addBox(x, y + 0.42, z, 0.46, 0.84, 0.46, { surface: 'wood' });
+  box(ctx, m, 0, seatH, 0, 0.44, 0.04, 0.42, P);
+  box(ctx, ctx.mats.linen, 0, seatH + 0.035, 0.01, 0.4, 0.035, 0.38, P);
+  box(ctx, m, 0, 0.78, -0.19, 0.42, 0.58, 0.04, P);
+  box(ctx, m, -0.18, 0.78, -0.19, 0.04, 0.5, 0.03, { ...P, cast: false });
+  box(ctx, m, 0.18, 0.78, -0.19, 0.04, 0.5, 0.03, { ...P, cast: false });
+  box(ctx, m, 0, 1.05, -0.19, 0.38, 0.04, 0.04, { ...P, cast: false });
+  ctx.world.addBox(x, y + 0.42, z, 0.48, 0.84, 0.48, { surface: 'wood' });
 }
 
 export function table(ctx, x, y, z, w, d, rotY) {

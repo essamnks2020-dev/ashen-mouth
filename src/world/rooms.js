@@ -20,7 +20,7 @@ export function dressAll(ctx, quality) {
 
 function dressFoyer(ctx) {
   rug(ctx, -0.35, 0, 3.35, 1.55, 3.4, ctx.mats.runner);
-  ceilingLamp(ctx, -0.35, 2.62, 3.5, { id: 'foyer', base: 2.05, dist: 9 });
+  ceilingLamp(ctx, -0.35, 2.62, 3.5, { id: 'foyer', base: 2.55, dist: 10 });
   clock(ctx, PW + 0.38, 0, 4.55);
   ctx.interact.push({
     kind: 'note', id: 'clock', title: 'Grandfather clock',
@@ -77,7 +77,7 @@ function dressParlor(ctx, quality) {
   armchair(ctx, -2.15, 0, 3.55, -0.9);
   table(ctx, -3.35, 0, 2.45, 0.85, 0.5, 0);
   lamp(ctx, PARLOR_LAMP.x, 0, PARLOR_LAMP.z, 'parlor', 1.45);
-  ceilingLamp(ctx, -3.5, 2.62, 2.7, { id: 'parlor-ceil', base: 1.55, dist: 8 });
+  ceilingLamp(ctx, -3.5, 2.62, 2.7, { id: 'parlor-ceil', base: 2.05, dist: 9 });
   makeCupboard(ctx, X0 + 0.48, 1.0, 4.55, 0.4, 1.28, 0.48, 'left',
     'Parlor cupboard', 'Hymnals and a box of matches. The wood smells of smoke.');
   picture(ctx, -3.5, 1.75, Z1 - 0.2, 0.55, 0.42, 's', ctx.mats.portrait);

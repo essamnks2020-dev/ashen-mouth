@@ -39,15 +39,15 @@ class Game {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.48;
+    this.renderer.toneMappingExposure = 1.72;
     this.renderer.shadowMap.enabled = this.settings.quality === 'high';
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.setClearColor(NIGHT, 1);
     this._resize();
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x1a2430, 0.0065);
-    this.scene.background = new THREE.Color(0x0c141c);
+    this.scene.fog = new THREE.FogExp2(0x1c2634, 0.0048);
+    this.scene.background = new THREE.Color(0x0e1620);
 
     this.camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 220);
 
@@ -441,7 +441,79 @@ function tick() { return new Promise((r) => setTimeout(r, 40)); }
 function wait(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 const game = new Game();
-game.boot().catch((err) => {
+game.boot().then(() => {
+  // Automation / recording surface — no secrets, just drives the house tour.
+  window.__AM = {
+    ready: true,
+    mode: () => game.mode,
+    start() { return game._act('play'); },
+    skipIntro() { game._skipIntro(); },
+    state() {
+      return {
+        mode: game.mode,
+        zone: game.story?.zone,
+        pos: game.player ? { x: game.player.pos.x, y: game.player.pos.y, z: game.player.pos.z } : null,
+        yaw: game.player?.yaw,
+        frags: { ...game.story?.fragments },
+        damper: !!game.story?.hasDamper,
+        known: [...(game.story?.known || [])],
+        end: game.story?.end,
+        near: game.story?.near?.title || null,
+      };
+    },
+    go(x, y, z, yaw = 0, pitch = 0) {
+      if (!game.player) return;
+      game.player.pos.set(x, y, z);
+      game.player.yaw = yaw;
+      game.player.pitch = pitch;
+      game.player.vel.set(0, 0, 0);
+      game.player.cam.position.set(x, y + game.player.eye, z);
+      game.player.cam.rotation.order = 'YXZ';
+      game.player.cam.rotation.y = yaw;
+      game.player.cam.rotation.x = pitch;
+    },
+    openDoor(id, open = true) {
+      const d = game.level?.doors?.find((x) => x.id === id);
+      if (d) d.want = open ? 1 : 0;
+    },
+    useNear() {
+      game.story?.use(game.player, game.audio, (p, pow, k) => game.emitSound(p, pow, k), game.listener, game.level);
+    },
+    useId(id) {
+      const it = game.level?.interact?.find((x) => x.id === id);
+      if (!it) return false;
+      game.story.near = it;
+      game.story.use(game.player, game.audio, (p, pow, k) => game.emitSound(p, pow, k), game.listener, game.level);
+      return true;
+    },
+    learnAll() {
+      game.story._learn('ma');
+      game.story._learn('ren');
+      game.story._learn('maren');
+    },
+    takeDamper() {
+      game.story.hasDamper = true;
+      game.story.hint = 'Damper in hand. Whisper MAREN at the grate.';
+    },
+    whisperMaren() {
+      game.phrasesOn = true;
+      if (!game.story.known.includes('MAREN')) game.story.known.push('MAREN');
+      game.voice.speakFallback('MAREN', 1);
+      game.voice.flags.bound = true;
+      game.voice.flags.frag = 'maren';
+    },
+    shout() { game.voice.speakFallback('help', 3); },
+    lantern(on) { if (game.player) game.player.lanternOn = !!on; },
+    unlockInput() {
+      game.input.locked = true; // pretend locked so movement accepts look without pointer lock
+    },
+  };
+  const tour = new URLSearchParams(location.search).get('tour');
+  if (tour === '1') {
+    // Auto cinematic tour used by the playthrough recorder.
+    setTimeout(() => runTour(window.__AM), 600);
+  }
+}).catch((err) => {
   console.error(err);
   const s = $('boot-status');
   if (s) s.textContent = 'the house failed — ' + (err && err.message ? err.message : err);
@@ -450,3 +522,69 @@ addEventListener('error', (e) => {
   const s = $('boot-status');
   if (s && $('boot')?.classList.contains('active')) s.textContent = 'the house failed — ' + e.message;
 });
+
+async function runTour(am) {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const hold = async (ms, fn) => {
+    const t0 = performance.now();
+    while (performance.now() - t0 < ms) { fn(); await sleep(32); }
+  };
+  try {
+    am.start();
+    await sleep(2200);
+    // Let intro play a bit from outside
+    await sleep(5500);
+    am.skipIntro();
+    am.unlockInput();
+    am.lantern(true);
+    am.openDoor('front', true);
+    await sleep(400);
+
+    const beats = [
+      [0.05, 0.02, 10.5, 0, 0.05, 1800],
+      [0.05, 0.02, 7.2, 0, -0.08, 1600],
+      [-0.35, 0.02, 4.4, 0, -0.02, 1400],
+      [-0.2, 0.02, 3.4, Math.PI, 0.05, 1200],
+      [-3.2, 0.02, 2.9, Math.PI * 0.5, 0.05, 1600],
+      [-3.5, 0.02, 2.5, Math.PI * 0.55, 0.1, 1400],
+      [3.4, 0.02, 3.1, -1.1, 0.08, 1600],
+      [-3.4, 0.02, -1.7, 0, 0.05, 1400],
+      [0.94, 0.1, 4.2, 0, 0.35, 1200],
+      [0.94, 1.4, 2.4, 0, 0.2, 1400],
+      [-0.3, 2.82, 2.2, Math.PI, 0.1, 1400],
+      [-3.5, 2.82, 2.5, Math.PI * 0.5, 0.05, 1400],
+      [3.6, 2.82, 2.6, -1.0, 0.05, 1400],
+      [2.2, 0.02, -2.4, 0, 0.25, 1200],
+      [2.2, -2.4, -1.0, Math.PI, 0.1, 1400],
+      [-2.1, -2.7, 0.2, Math.PI * 0.5, 0.15, 1600],
+      [-3.2, 0.02, 2.85, Math.PI * 0.5, 0.08, 1600],
+    ];
+    for (const [x, y, z, yaw, pitch, wait] of beats) {
+      am.go(x, y, z, yaw, pitch);
+      await sleep(wait);
+    }
+    // Interactables + voice + win
+    am.go(-3.4, 0.02, 2.75, Math.PI * 0.5, 0.1);
+    am.useId('photo');
+    await sleep(1200);
+    am.go(3.55, 0.02, 3.15, 0, 0.2);
+    am.useId('letter');
+    await sleep(1000);
+    am.go(3.9, 2.82, 3.0, -0.4, 0.1);
+    am.openDoor('child', true);
+    am.useId('drawing');
+    await sleep(1000);
+    am.go(-2.15, -2.6, 0.2, 0, 0.2);
+    am.useId('damper');
+    await sleep(1000);
+    am.learnAll();
+    am.takeDamper();
+    am.go(-3.1, 0.02, 2.85, Math.PI * 0.55, 0.15);
+    await sleep(600);
+    am.whisperMaren();
+    await hold(2200, () => am.whisperMaren());
+    await sleep(3500);
+  } catch (e) {
+    console.error('tour failed', e);
+  }
+}

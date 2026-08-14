@@ -215,22 +215,22 @@ export function makeMaterials(quality) {
     envMapIntensity: 0.8,
     side: THREE.DoubleSide,
   });
-  // Lit interior glass — must stay translucent from the yard or windows read as beige boards.
+  // Lit interior glass — warm glow must read from the yard (not beige boards, not grey plaques).
   const glassWarm = new THREE.MeshStandardMaterial({
-    color: 0x2a2218,
+    color: 0x3a2a18,
     emissive: 0xffb060,
-    emissiveIntensity: 0.55,
-    roughness: 0.18,
-    metalness: 0.05,
+    emissiveIntensity: 1.15,
+    roughness: 0.22,
+    metalness: 0.02,
     transparent: true,
-    opacity: 0.42,
+    opacity: 0.62,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
   const windowGlow = new THREE.MeshBasicMaterial({
-    color: 0xffc888,
+    color: 0xffc078,
     transparent: true,
-    opacity: 0.28,
+    opacity: 0.55,
     depthWrite: false,
     side: THREE.DoubleSide,
     toneMapped: false,
