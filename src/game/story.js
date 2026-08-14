@@ -3,14 +3,15 @@ import { lerp, clamp01, damp } from '../core/util.js';
 import { toggleLight } from '../world/house.js';
 
 const INTRO = [
-  { t: 0.0, pos: [0.0, 1.6, 14.8], look: [0, 2.4, 6.4], card: '14 ASHEN LANE', line: 'The Holloway house. The night before they sell it.' },
-  { t: 5.5, pos: [0.2, 1.55, 9.2], look: [0, 1.7, 5.8], card: '', line: 'You have a key. You were told not to stay after dark.' },
-  { t: 11.0, pos: [0.15, 1.55, 5.5], look: [-1.4, 1.6, 4.6], card: '', line: 'Your mother asked you not to speak in this house.' },
-  { t: 16.5, pos: [-4.6, 1.45, 3.4], look: [-7.4, 0.9, 2.6], card: '', line: 'She burned Father’s tapes in the grate. Every word he recorded.' },
-  { t: 22.5, pos: [5.4, 1.5, 3.6], look: [7.1, 1.15, 4.4], card: '', line: 'The tap still drips. The clock still keeps her time.' },
-  { t: 28.0, pos: [-6.6, 1.05, 2.6], look: [-7.6, 0.7, 2.6], card: 'ASHEN MOUTH', line: 'The house learned to listen. Close the flue before morning.' },
-  { t: 34.5, pos: [0.0, 1.62, 4.55], look: [0, 1.5, 1.2], card: '', line: 'Whisper if you must. Never shout.' },
-  { t: 38.5, pos: [0.0, 1.62, 4.55], look: [0, 1.5, 1.2], card: '', line: '' },
+  { t: 0.0, pos: [0.15, 1.55, 12.6], look: [0.2, 1.8, 6.4], card: '14 ASHEN LANE', line: 'The Holloway house. Tomorrow the sign goes up.' },
+  { t: 5.0, pos: [0.1, 1.58, 7.4], look: [0, 1.5, 3.8], card: '', line: 'You have the key. Mother said: go in, close the flue, do not stay after dark.' },
+  { t: 10.5, pos: [0.05, 1.58, 4.7], look: [-1.5, 1.5, 4.8], card: '', line: 'This is the house you grew up in. The clock still keeps her time.' },
+  { t: 15.5, pos: [-4.2, 1.5, 3.5], look: [-7.5, 0.85, 2.6], card: '', line: 'After Father died she burned every tape he recorded. She fed them to the grate.' },
+  { t: 21.0, pos: [-6.4, 1.15, 2.65], look: [-7.6, 0.7, 2.6], card: '', line: 'The fireplace learned to listen. It is the house’s mouth.' },
+  { t: 26.0, pos: [4.8, 1.52, 3.5], look: [7.05, 1.1, 4.4], card: '', line: 'The tap still drips. Drawers still open. She asked you not to shout.' },
+  { t: 31.0, pos: [0.35, 1.7, 4.2], look: [1.15, 2.4, 2.4], card: 'ASHEN MOUTH', line: 'Find her name. Take the damper from the cellar. Whisper it at the grate.' },
+  { t: 36.5, pos: [0.0, 1.58, 4.55], look: [0, 1.45, 1.3], card: '', line: 'Whisper if you must. Never shout.' },
+  { t: 40.0, pos: [0.0, 1.58, 4.55], look: [0, 1.45, 1.3], card: '', line: '' },
 ];
 
 export class Story {
@@ -31,12 +32,12 @@ export class Story {
     this.bindT = 0;
   }
 
-  skipIntro() { this.introT = 39; this.introDone = true; }
+  skipIntro() { this.introT = 40.5; this.introDone = true; }
 
   intro(dt, cam) {
     this.introT += dt;
     const t = this.introT;
-    if (t >= 38.2) { this.introDone = true; return { card: '', line: '' }; }
+    if (t >= 39.8) { this.introDone = true; return { card: '', line: '' }; }
     let a = INTRO[0], b = INTRO[INTRO.length - 1];
     for (let i = 0; i < INTRO.length - 1; i++) {
       if (t >= INTRO[i].t && t <= INTRO[i + 1].t) { a = INTRO[i]; b = INTRO[i + 1]; break; }
@@ -145,9 +146,13 @@ export class Story {
       emitSound(it.pos, 2.5, 'click');
       return;
     }
-    if (it.kind === 'drawer' && it.mesh) {
-      it.mesh.position.x -= 0.12;
-      setTimeout(() => { if (it.mesh) it.mesh.position.x += 0.12; }, 900);
+    if (it.kind === 'drawer' || it.kind === 'cupboard') {
+      if (it.anim) it.anim.want = it.anim.want > 0.5 ? 0 : 1;
+      if (it.frag) this._learn(it.frag);
+      this.inspect = { title: it.title, body: it.body || '' };
+      this.inspectT = 5.5;
+      emitSound(it.pos, 3.2, 'door');
+      return;
     }
     if (it.frag) this._learn(it.frag);
     if (it.kind === 'key' && !this.hasDamper) {

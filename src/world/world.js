@@ -17,10 +17,12 @@ export class Collider {
 export class World {
   constructor() {
     this.colliders = [];
+    this.ramps = [];
     this.grid = new Map();
     this.gravity = -22;
     this.killY = -8;
     this._q = [];
+    this.onRamp = false;
   }
 
   _key(cx, cz) { return cx * 73856093 ^ cz * 19349663; }
@@ -48,6 +50,29 @@ export class World {
     ));
   }
 
+  /**
+   * Walkable slope along Z. yAtMinZ is feet height at the smaller z,
+   * yAtMaxZ at the larger z. No side collision — add rails separately.
+   */
+  addRamp(x0, x1, z0, z1, yAtMinZ, yAtMaxZ) {
+    const a = Math.min(x0, x1), b = Math.max(x0, x1);
+    const c = Math.min(z0, z1), d = Math.max(z0, z1);
+    this.ramps.push({ x0: a, x1: b, z0: c, z1: d, y0: yAtMinZ, y1: yAtMaxZ });
+  }
+
+  rampAt(x, z) {
+    let best = null;
+    for (let i = 0; i < this.ramps.length; i++) {
+      const r = this.ramps[i];
+      if (x < r.x0 || x > r.x1 || z < r.z0 || z > r.z1) continue;
+      const span = r.z1 - r.z0 || 1;
+      const t = (z - r.z0) / span;
+      const y = r.y0 + (r.y1 - r.y0) * t;
+      if (best === null || y > best) best = y;
+    }
+    return best;
+  }
+
   query(minx, minz, maxx, maxz) {
     const out = this._q;
     out.length = 0;
@@ -67,6 +92,7 @@ export class World {
 
   /** Axis-separated capsule move. `p` is feet. Returns grounded flag. */
   moveCapsule(p, vel, radius, height, dt) {
+    this.onRamp = false;
     vel.y += this.gravity * dt;
     if (vel.y < -28) vel.y = -28;
 
@@ -75,17 +101,26 @@ export class World {
     p.z += vel.z * dt;
     this._sep(p, radius, height, 'z');
 
+    const ry = this.rampAt(p.x, p.z);
     let grounded = false;
-    p.y += vel.y * dt;
-    const yHit = this._sepY(p, radius, height, vel.y);
-    if (yHit === 'floor') { vel.y = 0; grounded = true; }
-    if (yHit === 'ceil') vel.y = Math.min(vel.y, 0);
-    if (p.y < this.killY) { p.y = 0.4; vel.set(0, 0, 0); }
+    if (ry !== null && p.y <= ry + 0.42 && p.y >= ry - 0.65) {
+      p.y = ry;
+      vel.y = 0;
+      grounded = true;
+      this.onRamp = true;
+    } else {
+      p.y += vel.y * dt;
+      const yHit = this._sepY(p, radius, height, vel.y);
+      if (yHit === 'floor') { vel.y = 0; grounded = true; }
+      if (yHit === 'ceil') vel.y = Math.min(vel.y, 0);
+    }
+
+    if (p.y < this.killY) { p.y = 0.05; vel.set(0, 0, 0); grounded = true; }
     return grounded;
   }
 
   _sep(p, r, h, axis) {
-    const y0 = p.y + 0.08, y1 = p.y + h;
+    const y0 = p.y + 0.12, y1 = p.y + h;
     const list = this.query(p.x - r - 0.5, p.z - r - 0.5, p.x + r + 0.5, p.z + r + 0.5);
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
@@ -93,15 +128,15 @@ export class World {
       if (y1 < c.min.y + 0.02 || y0 > c.max.y - 0.02) continue;
       if (axis === 'x') {
         if (p.z + r <= c.min.z || p.z - r >= c.max.z) continue;
-        if (p.x + r > c.min.x && p.x < c.min.x + r + 0.4 && p.x < (c.min.x + c.max.x) * 0.5)
+        if (p.x + r > c.min.x && p.x < (c.min.x + c.max.x) * 0.5)
           p.x = c.min.x - r;
-        else if (p.x - r < c.max.x && p.x > c.max.x - r - 0.4 && p.x > (c.min.x + c.max.x) * 0.5)
+        else if (p.x - r < c.max.x && p.x > (c.min.x + c.max.x) * 0.5)
           p.x = c.max.x + r;
       } else {
         if (p.x + r <= c.min.x || p.x - r >= c.max.x) continue;
-        if (p.z + r > c.min.z && p.z < c.min.z + r + 0.4 && p.z < (c.min.z + c.max.z) * 0.5)
+        if (p.z + r > c.min.z && p.z < (c.min.z + c.max.z) * 0.5)
           p.z = c.min.z - r;
-        else if (p.z - r < c.max.z && p.z > c.max.z - r - 0.4 && p.z > (c.min.z + c.max.z) * 0.5)
+        else if (p.z - r < c.max.z && p.z > (c.min.z + c.max.z) * 0.5)
           p.z = c.max.z + r;
       }
     }
@@ -110,6 +145,7 @@ export class World {
   _sepY(p, r, h, vy) {
     const list = this.query(p.x - r - 0.2, p.z - r - 0.2, p.x + r + 0.2, p.z + r + 0.2);
     let hit = null;
+    let bestFloor = -Infinity;
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
       if (!c.solid) continue;
@@ -117,17 +153,16 @@ export class World {
       if (p.z + r <= c.min.z || p.z - r >= c.max.z) continue;
       const top = c.max.y;
       const bot = c.min.y;
-        if (p.y <= top + 0.18 && p.y >= top - 0.72 && p.y + h > top) {
-        p.y = top;
-        hit = 'floor';
-      } else if (p.y + h > bot && p.y < bot && vy > 0) {
+      const thick = top - bot;
+      // Only thin slabs (floors) or shallow tops — never ride walls/furniture from the side.
+      if (vy <= 0.4 && thick < 0.45 && p.y <= top + 0.22 && p.y >= top - 0.28 && p.y + h > top) {
+        if (top > bestFloor) { bestFloor = top; hit = 'floor'; }
+      } else if (p.y + h > bot && p.y < bot - 0.02 && vy > 0 && thick < 0.45) {
         p.y = bot - h;
         hit = 'ceil';
-      } else if (p.y < top && p.y + h > bot) {
-        if (p.y + 0.4 > top) { p.y = top; hit = 'floor'; }
-        else if (vy > 0) { p.y = bot - h; hit = 'ceil'; }
       }
     }
+    if (hit === 'floor') p.y = bestFloor;
     return hit;
   }
 
@@ -152,12 +187,15 @@ export class World {
   }
 
   groundAt(x, z) {
+    const ry = this.rampAt(x, z);
+    let y = ry !== null ? ry : -4;
     const list = this.query(x - 0.2, z - 0.2, x + 0.2, z + 0.2);
-    let y = -4;
     for (let i = 0; i < list.length; i++) {
       const c = list[i];
       if (!c.solid) continue;
       if (x < c.min.x || x > c.max.x || z < c.min.z || z > c.max.z) continue;
+      const thick = c.max.y - c.min.y;
+      if (thick > 0.45) continue;
       if (c.max.y > y && c.max.y < 40) y = c.max.y;
     }
     return y;

@@ -86,19 +86,21 @@ export function buildHouse(scene, world, mats, quality) {
   // Floors
   // Ground floor with stair hole
   addFloor(root, world, mats, ox, 0, oz, W, D, [
-    { x: 1.15, z: 2.6, w: 1.2, d: 3.7 },
-    { x: 3.35, z: 2.1, w: 1.2, d: 3.6 },
+    { x: 1.15, z: 2.96, w: 1.22, d: 3.56 },
+    { x: 3.35, z: 2.15, w: 1.22, d: 3.5 },
   ]);
   addFloor(root, world, mats, ox, H1, oz, W, D, [
-    { x: 1.15, z: 2.4, w: 1.25, d: 3.5 },
+    { x: 1.15, z: 2.76, w: 1.24, d: 2.88 },
   ]);
   addFloor(root, world, mats, ox, H2, oz, W, D, []);
   addFloor(root, world, mats, 0, cellarY, 1.4, 10.2, 8.4, []);
   addCol(0, cellarY - 0.1, 1.4, 10.2, 0.2, 8.4);
 
-  // Ceilings (underside plaster)
-  box(root, mats.plaster, ox, H1 - 0.04, oz, W - 0.2, 0.08, D - 0.2);
-  box(root, mats.plaster, ox, H2 - 0.04, oz, W - 0.2, 0.08, D - 0.2);
+  addCeiling(root, mats, ox, H1 - 0.05, oz, W - 0.2, D - 0.2, [
+    { x: 1.15, z: 2.96, w: 1.28, d: 3.6 },
+    { x: 3.35, z: 2.15, w: 1.28, d: 3.55 },
+  ]);
+  addCeiling(root, mats, ox, H2 - 0.05, oz, W - 0.2, D - 0.2, []);
 
   // Outer interior walls
   wallX(root, world, mats.plaster, x0 + T / 2, 0, z0, z1, H1, { skip: [{ a: 1.85, b: 2.95 }] });
@@ -131,7 +133,7 @@ export function buildHouse(scene, world, mats, quality) {
   wallX(root, world, mats.brick, -5.1, cellarY, -2.6, 5.4, H1 - cellarY - 0.15, {});
   wallX(root, world, mats.brick, 5.1, cellarY, -2.6, 5.4, H1 - cellarY - 0.15, {});
   wallZ(root, world, mats.brick, -2.6, cellarY, -5.1, 5.1, H1 - cellarY - 0.15, {});
-  wallZ(root, world, mats.brick, 5.4, cellarY, -5.1, 5.1, H1 - cellarY - 0.15, { skip: [{ a: 0.9, b: 2.0 }] });
+  wallZ(root, world, mats.brick, 5.4, cellarY, -5.1, 5.1, H1 - cellarY - 0.15, {});
 
   // Windows (openings already in facade; interior glass)
   const windows = [
@@ -150,12 +152,16 @@ export function buildHouse(scene, world, mats, quality) {
     // frame
     box(root, mats.wood, w.x, w.y, w.z, w.wall === 'w' ? 0.08 : w.w + 0.1, w.h + 0.1, w.wall === 'w' ? w.w + 0.1 : 0.08);
     box(root, mats.wood, w.x, w.y, w.z, w.wall === 'w' ? 0.05 : 0.04, w.h, w.wall === 'w' ? w.w : 0.04);
+    const fill = new THREE.PointLight(0xa8c4e4, 0.62, 5.8, 1.75);
+    fill.position.set(w.x, w.y, w.wall === 'w' ? w.z + 0.55 : w.z - 0.45);
+    root.add(fill);
+    lights.push({ light: fill, base: 0.62, flicker: 0 });
   }
 
   // Moonlight through parlor windows
-  const moon = new THREE.DirectionalLight(0x8aa4c8, 0.28);
-  moon.position.set(-12, 14, 18);
-  moon.target.position.set(-5, 1, 3);
+  const moon = new THREE.DirectionalLight(0xa8c4e0, 0.55);
+  moon.position.set(-12, 16, 18);
+  moon.target.position.set(-4, 1.4, 3);
   scene.add(moon);
   scene.add(moon.target);
   if (quality === 'high') {
@@ -167,19 +173,18 @@ export function buildHouse(scene, world, mats, quality) {
     moon.shadow.camera.right = moon.shadow.camera.top = 12;
   }
 
-  const hemi = new THREE.HemisphereLight(0x6a7a92, 0x1a100c, 0.22);
+  const hemi = new THREE.HemisphereLight(0xc4b49a, 0x2a1c14, 0.55);
   scene.add(hemi);
+  const amb = new THREE.AmbientLight(0xfff0d8, 0.22);
+  scene.add(amb);
 
-  // Stairs
-  const stairs = buildStairs(root, world, mats, 1.15, 0, 4.9, 14, 0.218, 0.26, -1);
-  living.push(stairs);
+  // Main stair: foyer (south, y=0) up toward landing (north). Ramp, not box-stack collision.
+  buildStairs(root, world, mats, 1.15, 0, 4.72, H1, 14, 1.16, -1);
+  // Cellar stair: kitchen (south, y=0) down toward cellar (north).
+  buildStairs(root, world, mats, 3.35, cellarY, 0.48, 0, 14, 1.16, 1);
 
-  // Rail
-  box(root, mats.wood, 0.52, H1 + 0.45, 2.6, 0.06, 0.9, 3.5);
-  for (let i = 0; i < 8; i++) box(root, mats.wood, 0.52, H1 + 0.22, 1.1 + i * 0.42, 0.04, 0.44, 0.04);
-
-  // Cellar stairs from kitchen
-  buildStairs(root, world, mats, 3.35, cellarY, 0.4, 14, 0.218, 0.26, 1);
+  rail(root, world, mats, 0.50, H1, 1.38, 4.12, 0.92);
+  rail(root, world, mats, 1.80, H1, 1.38, 3.30, 0.92);
 
   // ——— rooms ———
   const foyer = dressFoyer(root, world, mats, living, interact, lights, quality);
@@ -196,9 +201,9 @@ export function buildHouse(scene, world, mats, quality) {
   doors.push(makeDoor(root, world, mats, living, interact, 0, 0, z1 - T, 0, 'front', 'Front door', true, 1));
   doors.push(makeDoor(root, world, mats, living, interact, -2.05, 0, 2.85, Math.PI / 2, 'parlor', 'Parlor door', false, -1));
   doors.push(makeDoor(root, world, mats, living, interact, 2.05, 0, 2.85, -Math.PI / 2, 'kitchen', 'Kitchen door', false, 1));
-  doors.push(makeDoor(root, world, mats, living, interact, 1.45, cellarY, 5.4 - 0.02, 0, 'cellar', 'Cellar door', true, 1));
-  doors.push(makeDoor(root, world, mats, living, interact, -2.05, H1, 2.5, Math.PI / 2, 'master', 'Bedroom door', true, -1));
-  doors.push(makeDoor(root, world, mats, living, interact, 2.05, H1, 2.5, -Math.PI / 2, 'child', 'Nursery door', true, 1));
+  doors.push(makeDoor(root, world, mats, living, interact, 0, 0, 1.15, 0, 'dining', 'Dining door', false, 1));
+  doors.push(makeDoor(root, world, mats, living, interact, -2.05, H1, 2.5, Math.PI / 2, 'master', 'Bedroom door', false, -1));
+  doors.push(makeDoor(root, world, mats, living, interact, 2.05, H1, 2.5, -Math.PI / 2, 'child', 'Nursery door', false, 1));
 
   patrol.push(
     new THREE.Vector3(-5.2, 0, 2.8),
@@ -331,16 +336,136 @@ function segments(a, b, skip) {
   return out;
 }
 
-function buildStairs(root, world, mats, x, y0, zStart, n, rise, run, dirZ) {
+function addCeiling(root, mats, cx, y, cz, w, d, holes = []) {
+  const x0 = cx - w / 2, x1 = cx + w / 2;
+  const z0 = cz - d / 2, z1 = cz + d / 2;
+  const zs = new Set([z0, z1]);
+  for (const h of holes) {
+    zs.add(h.z - h.d / 2);
+    zs.add(h.z + h.d / 2);
+  }
+  const zlist = [...zs].sort((a, b) => a - b);
+  for (let i = 0; i < zlist.length - 1; i++) {
+    const za = zlist[i], zb = zlist[i + 1];
+    if (zb - za < 0.08) continue;
+    const zm = (za + zb) / 2;
+    const xs = new Set([x0, x1]);
+    for (const h of holes) {
+      if (zm > h.z - h.d / 2 && zm < h.z + h.d / 2) {
+        xs.add(h.x - h.w / 2);
+        xs.add(h.x + h.w / 2);
+      }
+    }
+    const xlist = [...xs].sort((a, b) => a - b);
+    for (let j = 0; j < xlist.length - 1; j++) {
+      const xa = xlist[j], xb = xlist[j + 1];
+      if (xb - xa < 0.08) continue;
+      const xm = (xa + xb) / 2;
+      let blocked = false;
+      for (const h of holes) {
+        if (Math.abs(xm - h.x) < h.w / 2 && Math.abs(zm - h.z) < h.d / 2) blocked = true;
+      }
+      if (blocked) continue;
+      const m = box(root, mats.plaster, xm, y, zm, xb - xa, 0.06, zb - za);
+      m.castShadow = false;
+    }
+  }
+}
+
+function buildStairs(root, world, mats, x, yLow, zBottom, yHigh, n, width, dzUp) {
+  const rise = (yHigh - yLow) / n;
+  const run = 0.27;
   const group = new THREE.Group();
   root.add(group);
   for (let i = 0; i < n; i++) {
-    const y = y0 + rise * (i + 0.5);
-    const z = zStart + dirZ * run * i;
-    box(group, mats.wood, x, y, z, 1.05, rise, run + 0.02);
-    world.addBox(x, y, z, 1.05, rise, run + 0.02, { surface: 'wood' });
+    const y = yLow + rise * (i + 0.5);
+    const z = zBottom + dzUp * run * i;
+    const tread = box(group, mats.wood, x, y, z, width, rise * 0.92, run + 0.015);
+    tread.castShadow = true;
+    const nosing = box(group, mats.woodDark, x, y + rise * 0.42, z + dzUp * run * 0.38, width, 0.03, 0.04);
+    nosing.castShadow = false;
   }
-  return { update() {} };
+  const zTop = zBottom + dzUp * run * (n - 1);
+  const z0 = Math.min(zBottom, zTop) - run * 0.45;
+  const z1 = Math.max(zBottom, zTop) + run * 0.45;
+  const half = width * 0.5 - 0.01;
+  if (dzUp < 0) world.addRamp(x - half, x + half, z0, z1, yHigh, yLow);
+  else world.addRamp(x - half, x + half, z0, z1, yLow, yHigh);
+
+  const zMid = (z0 + z1) / 2;
+  const zLen = z1 - z0;
+  const dy = yHigh - yLow;
+  const len = Math.hypot(zLen, dy);
+  const tilt = Math.atan2(dy, zLen);
+  const handL = box(group, mats.wood, x - width / 2, (yLow + yHigh) * 0.5 + 0.82, zMid, 0.045, 0.045, len);
+  const handR = box(group, mats.wood, x + width / 2, (yLow + yHigh) * 0.5 + 0.82, zMid, 0.045, 0.045, len);
+  handL.rotation.x = dzUp < 0 ? tilt : -tilt;
+  handR.rotation.x = dzUp < 0 ? tilt : -tilt;
+  for (let i = 0; i < 6; i++) {
+    const t = i / 5;
+    const z = zBottom + dzUp * run * (n - 1) * t;
+    const y = yLow + dy * t + 0.42;
+    box(group, mats.wood, x - width / 2, y, z, 0.04, 0.85, 0.04);
+    box(group, mats.wood, x + width / 2, y, z, 0.04, 0.85, 0.04);
+  }
+}
+
+function rail(root, world, mats, x, y, z0, z1, h) {
+  const z = (z0 + z1) / 2, d = Math.abs(z1 - z0);
+  box(root, mats.wood, x, y + h * 0.5, z, 0.07, h, d);
+  world.addBox(x, y + h * 0.5, z, 0.08, h, d, { surface: 'wood' });
+}
+
+function ceilingLamp(root, mats, lights, x, y, z, opts = {}) {
+  const color = opts.color ?? 0xffe1b0;
+  const base = opts.base ?? 1.85;
+  box(root, mats.brass, x, y, z, 0.22, 0.06, 0.22);
+  box(root, mats.lampShade, x, y - 0.16, z, 0.48, 0.2, 0.48);
+  const L = new THREE.PointLight(color, base, opts.dist ?? 9.5, 1.45);
+  L.position.set(x, y - 0.2, z);
+  root.add(L);
+  lights.push({ light: L, base, flicker: opts.flicker ?? 0.03, id: opts.id, toggle: !!opts.toggle, on: true });
+}
+
+function makeDrawer(root, world, mats, living, interact, x, y, z, w, h, d, axis, title, body, frag) {
+  const leaf = box(root, mats.woodDark, x, y, z, w, h, d);
+  box(leaf, mats.brass, axis === 'x' ? -w * 0.35 : 0, 0, axis === 'z' ? d * 0.35 : 0.02, 0.08, 0.03, 0.04);
+  const anim = { open: 0, want: 0 };
+  const base = leaf.position.clone();
+  living.push({
+    update(dt) {
+      anim.open = damp(anim.open, anim.want, 7, dt);
+      if (axis === 'x') leaf.position.x = base.x - anim.open * 0.38;
+      else leaf.position.z = base.z + anim.open * 0.38;
+    },
+  });
+  world.addBox(x, y, z, w + 0.04, h + 0.08, d + 0.04, { surface: 'wood' });
+  interact.push({
+    kind: 'drawer', id: title, title, pos: new THREE.Vector3(x, y, z), reach: 1.55,
+    body, frag, anim,
+  });
+}
+
+function makeCupboard(root, world, mats, living, interact, x, y, z, w, h, d, hinge, title, body) {
+  box(root, mats.wood, x, y, z, w, h, d);
+  world.addBox(x, y, z, w, h, d, { surface: 'wood' });
+  const door = new THREE.Group();
+  const hx = hinge === 'left' ? -w * 0.48 : w * 0.48;
+  door.position.set(x + hx, y, z + d * 0.52);
+  root.add(door);
+  const panel = box(door, mats.woodDark, -hx * 0.02 + (hinge === 'left' ? w * 0.46 : -w * 0.46), 0, 0, w * 0.92, h * 0.92, 0.04);
+  box(panel, mats.brass, hinge === 'left' ? w * 0.35 : -w * 0.35, 0, 0.03, 0.04, 0.08, 0.03);
+  const anim = { open: 0, want: 0 };
+  living.push({
+    update(dt) {
+      anim.open = damp(anim.open, anim.want, 5.5, dt);
+      door.rotation.y = anim.open * (hinge === 'left' ? -1.2 : 1.2);
+    },
+  });
+  interact.push({
+    kind: 'cupboard', id: title, title, pos: new THREE.Vector3(x, y, z + d * 0.5), reach: 1.6,
+    body, anim,
+  });
 }
 
 function makeDoor(root, world, mats, living, interact, x, y, z, rotY, id, title, startClosed, openSign) {
@@ -380,44 +505,38 @@ function makeDoor(root, world, mats, living, interact, x, y, z, rotY, id, title,
 }
 
 function dressFoyer(root, world, mats, living, interact, lights) {
-  box(root, mats.carpet, 0, 0.06, 3.6, 2.4, 0.04, 3.2);
-  // clock
+  box(root, mats.carpet, 0, 0.06, 3.85, 2.35, 0.04, 2.4);
+  ceilingLamp(root, mats, lights, 0, 2.92, 3.7, { id: 'foyer', base: 2.15, dist: 10 });
+
   const clock = new THREE.Group();
-  clock.position.set(-1.55, 0, 4.6);
+  clock.position.set(-1.55, 0, 4.85);
   root.add(clock);
   box(clock, mats.woodDark, 0, 1.15, 0, 0.42, 2.3, 0.28);
-  const face = box(clock, mats.linen, 0, 1.85, 0.15, 0.28, 0.28, 0.02);
+  box(clock, mats.linen, 0, 1.85, 0.15, 0.28, 0.28, 0.02);
   const pendulum = new THREE.Group();
   pendulum.position.set(0, 1.35, 0.12);
   clock.add(pendulum);
   box(pendulum, mats.brass, 0, -0.45, 0, 0.04, 0.9, 0.04);
   box(pendulum, mats.brass, 0, -0.92, 0, 0.12, 0.12, 0.05);
-  living.push({
-    update(dt, t) {
-      pendulum.rotation.z = Math.sin(t * 2.05) * 0.18;
-    },
-  });
+  living.push({ update(dt, t) { pendulum.rotation.z = Math.sin(t * 2.05) * 0.18; } });
+  world.addBox(-1.55, 1.15, 4.85, 0.48, 2.3, 0.32, { surface: 'wood' });
   interact.push({
     kind: 'note', id: 'clock', title: 'Grandfather clock',
-    pos: new THREE.Vector3(-1.55, 1.4, 4.6), reach: 1.6,
+    pos: new THREE.Vector3(-1.55, 1.4, 4.85), reach: 1.6,
     body: 'It still keeps her time. The pendulum never learned to hurry. A paper wedge in the case says: hush when the house is listening.',
   });
 
-  // coat rack
-  box(root, mats.wood, 1.55, 1.05, 5.35, 0.08, 2.1, 0.08);
-  box(root, mats.coat, 1.55, 1.35, 5.2, 0.35, 1.1, 0.12);
+  box(root, mats.wood, 1.55, 1.05, 5.55, 0.08, 2.1, 0.08);
+  box(root, mats.coat, 1.55, 1.35, 5.4, 0.35, 1.1, 0.12);
   interact.push({
     kind: 'note', id: 'coat', title: 'Her coat',
-    pos: new THREE.Vector3(1.55, 1.3, 5.3), reach: 1.5,
+    pos: new THREE.Vector3(1.55, 1.3, 5.45), reach: 1.5,
     body: 'Wool still holding rain from a night she never came back from the parlor. The pocket has a house key and a burnt match.',
   });
 
-  const foyerLamp = new THREE.PointLight(0xffc07a, 0.85, 8, 1.7);
-  foyerLamp.position.set(0, 2.55, 3.6);
-  root.add(foyerLamp);
-  lights.push({ light: foyerLamp, base: 0.85, flicker: 0.06, id: 'foyer' });
-  box(root, mats.brass, 0, 2.72, 3.6, 0.25, 0.08, 0.25);
-  box(root, mats.lampShade, 0, 2.48, 3.6, 0.5, 0.28, 0.5);
+  // Picture over the dining door
+  box(root, mats.woodDark, 0, 2.15, 1.28, 0.42, 0.32, 0.04);
+  box(root, mats.linen, 0, 2.15, 1.31, 0.34, 0.24, 0.01);
 
   return {};
 }
@@ -434,10 +553,10 @@ function dressParlor(root, world, mats, living, interact, lights, quality) {
     box(grate, mats.iron, 0.02, 0, -0.45 + i * 0.18, 0.04, 0.7, 0.04);
   }
   const glow = box(grate, mats.ember, -0.08, -0.05, 0, 0.12, 0.28, 0.7);
-  const fireLight = new THREE.PointLight(0xff6a28, 1.35, 7.5, 1.8);
+  const fireLight = new THREE.PointLight(0xff6a28, 1.7, 8.5, 1.65);
   fireLight.position.set(-7.2, 0.7, 2.6);
   root.add(fireLight);
-  lights.push({ light: fireLight, base: 1.35, flicker: 0.22, id: 'fire' });
+  lights.push({ light: fireLight, base: 1.7, flicker: 0.18, id: 'fire' });
   living.push({
     update(dt, t) {
       glow.scale.y = 0.85 + Math.sin(t * 7.2) * 0.12 + Math.sin(t * 13) * 0.06;
@@ -471,10 +590,10 @@ function dressParlor(root, world, mats, living, interact, lights, quality) {
   // lamp + moths
   box(root, mats.wood, -3.15, 0.55, 4.6, 0.12, 1.1, 0.12);
   box(root, mats.lampShade, -3.15, 1.2, 4.6, 0.42, 0.28, 0.42);
-  const parlorLamp = new THREE.PointLight(0xffd19a, 1.05, 6.5, 1.7);
+  const parlorLamp = new THREE.PointLight(0xffd19a, 1.55, 8, 1.55);
   parlorLamp.position.set(-3.15, 1.15, 4.6);
   root.add(parlorLamp);
-  lights.push({ light: parlorLamp, base: 1.05, flicker: 0.05, id: 'parlor', toggle: true, on: true });
+  lights.push({ light: parlorLamp, base: 1.55, flicker: 0.04, id: 'parlor', toggle: true, on: true });
   interact.push({
     kind: 'light', id: 'parlor-lamp', title: 'Parlor lamp',
     pos: new THREE.Vector3(-3.15, 1.1, 4.6), reach: 1.6, lightId: 'parlor',
@@ -483,6 +602,13 @@ function dressParlor(root, world, mats, living, interact, lights, quality) {
   // curtains parlor south
   addCurtains(root, mats, living, -5.1, 1.45, 6.05, 1.2, 2.0);
   addCurtains(root, mats, living, -3.3, 1.45, 6.05, 1.2, 2.0);
+
+  ceilingLamp(root, mats, lights, -5.1, 2.92, 2.8, { id: 'parlor-ceil', base: 1.7, dist: 9 });
+  makeCupboard(root, world, mats, living, interact, -7.55, 1.05, 4.85, 0.42, 1.35, 0.55, 'left',
+    'Parlor cupboard', 'Hymnals and a box of matches. The wood smells of smoke.');
+  box(root, mats.wood, -5.8, 0.55, 4.9, 0.7, 1.1, 0.32);
+  world.addBox(-5.8, 0.55, 4.9, 0.7, 1.1, 0.32, { surface: 'wood' });
+  box(root, mats.linen, -6.4, 1.55, 5.95, 0.02, 0.38, 0.5);
 
   // dust shaft
   if (quality !== 'low') {
@@ -526,20 +652,22 @@ function dressKitchen(root, world, mats, living, interact, lights) {
     body: 'It has dripped since the funeral. She said a house should not be silent. She was wrong about why.',
   });
 
-  // drawers
-  const drawer = box(root, mats.woodDark, 7.32, 0.55, 3.1, 0.62, 0.22, 0.5);
-  interact.push({
-    kind: 'drawer', id: 'drawer', title: 'Kitchen drawer',
-    pos: new THREE.Vector3(7.0, 0.7, 3.1), reach: 1.6, frag: 'ma',
-    body: 'Twine, a burnt matchbox, and a list: milk, tape, hush-word. The first syllable is written twice. MA.',
-    mesh: drawer,
-  });
+  // drawers that actually slide
+  makeDrawer(root, world, mats, living, interact, 7.28, 0.55, 3.1, 0.58, 0.2, 0.48, 'x',
+    'Kitchen drawer',
+    'Twine, a burnt matchbox, and a list: milk, tape, hush-word. The first syllable is written twice. MA.',
+    'ma');
+
+  makeCupboard(root, world, mats, living, interact, 7.32, 1.85, 3.6, 0.55, 0.7, 0.42, 'left',
+    'Wall cupboard', 'Plates stacked facing the wall. She stopped setting a fourth.');
 
   box(root, mats.wood, 5.1, 0.4, 2.2, 1.35, 0.08, 0.8);
   box(root, mats.wood, 5.1, 0.22, 1.9, 0.08, 0.4, 0.08);
   box(root, mats.wood, 4.5, 0.22, 2.5, 0.08, 0.4, 0.08);
   box(root, mats.wood, 5.7, 0.22, 2.5, 0.08, 0.4, 0.08);
   addColFurniture(world, 5.1, 0.35, 2.2, 1.4, 0.7, 0.85);
+  box(root, mats.porcelain, 4.85, 0.46, 2.05, 0.14, 0.08, 0.14);
+  box(root, mats.porcelain, 5.35, 0.46, 2.35, 0.12, 0.1, 0.12);
 
   const letter = box(root, mats.linen, 5.15, 0.46, 2.15, 0.22, 0.01, 0.16);
   interact.push({
@@ -548,11 +676,12 @@ function dressKitchen(root, world, mats, living, interact, lights) {
     body: 'To the buyer: the flue sticks. Do not shout in the parlor. If it leans in, say the first of her name, small. MA.',
   });
 
-  const pend = new THREE.PointLight(0xffc070, 0.9, 7, 1.7);
+  const pend = new THREE.PointLight(0xffe0a8, 1.7, 9, 1.45);
   pend.position.set(5.2, 2.55, 3.4);
   root.add(pend);
-  lights.push({ light: pend, base: 0.9, flicker: 0.07, id: 'kitchen', toggle: true, on: true });
-  box(root, mats.lampShade, 5.2, 2.55, 3.4, 0.4, 0.22, 0.4);
+  lights.push({ light: pend, base: 1.7, flicker: 0.04, id: 'kitchen', toggle: true, on: true });
+  box(root, mats.lampShade, 5.2, 2.55, 3.4, 0.55, 0.12, 1.4);
+  ceilingLamp(root, mats, lights, 6.4, 2.92, 4.6, { id: 'kitchen-2', base: 1.4, color: 0xfff2c8, dist: 8 });
   interact.push({
     kind: 'light', id: 'kitchen-light', title: 'Kitchen light',
     pos: new THREE.Vector3(5.2, 1.5, 3.4), reach: 1.8, lightId: 'kitchen',
@@ -569,10 +698,10 @@ function dressDining(root, world, mats, living, interact, lights) {
     box(root, mats.wood, x, 0.28, z, 0.32, 0.55, 0.32);
   }
   addColFurniture(world, 0, 0.4, -1.5, 1.8, 0.8, 1.1);
-  const din = new THREE.PointLight(0xffd0a0, 0.55, 6, 1.8);
-  din.position.set(0, 2.4, -1.4);
-  root.add(din);
-  lights.push({ light: din, base: 0.55, flicker: 0.04, id: 'dining' });
+  box(root, mats.porcelain, -0.35, 0.48, -1.35, 0.12, 0.05, 0.12);
+  box(root, mats.porcelain, 0.35, 0.48, -1.55, 0.1, 0.08, 0.1);
+  box(root, mats.linen, 0.0, 0.47, -1.2, 0.18, 0.02, 0.12);
+  ceilingLamp(root, mats, lights, 0, 2.92, -1.4, { id: 'dining', base: 1.85, dist: 8 });
   interact.push({
     kind: 'note', id: 'table', title: 'Dining table',
     pos: new THREE.Vector3(0, 0.7, -1.5), reach: 1.5,
@@ -583,16 +712,19 @@ function dressDining(root, world, mats, living, interact, lights) {
 
 function dressLanding(root, world, mats, living, interact, lights) {
   const y = 3.05;
-  box(root, mats.carpet, 0, y + 0.06, 2.6, 1.6, 0.04, 3.2);
-  const sconce = new THREE.PointLight(0xffc888, 0.7, 5.5, 1.8);
-  sconce.position.set(-1.6, y + 1.6, 2.5);
+  box(root, mats.carpet, 0, y + 0.06, 3.6, 1.55, 0.04, 2.2);
+  ceilingLamp(root, mats, lights, 0, y + 2.85, 3.5, { id: 'landing', base: 1.9, dist: 8 });
+  const sconce = new THREE.PointLight(0xffd8a0, 1.15, 6.5, 1.7);
+  sconce.position.set(-1.55, y + 1.55, 2.5);
   root.add(sconce);
-  lights.push({ light: sconce, base: 0.7, flicker: 0.08, id: 'landing' });
+  lights.push({ light: sconce, base: 1.15, flicker: 0.04, id: 'landing-sconce' });
   box(root, mats.brass, -1.72, y + 1.55, 2.5, 0.08, 0.16, 0.08);
   box(root, mats.lampShade, -1.55, y + 1.5, 2.5, 0.18, 0.14, 0.18);
+  box(root, mats.woodDark, 0, y + 1.55, 0.55, 0.5, 0.36, 0.04);
+  box(root, mats.linen, 0, y + 1.55, 0.58, 0.4, 0.28, 0.01);
   interact.push({
     kind: 'note', id: 'landing', title: 'Landing',
-    pos: new THREE.Vector3(0, y + 1.2, 2.5), reach: 1.4,
+    pos: new THREE.Vector3(0, y + 1.2, 3.4), reach: 1.4,
     body: 'From here the parlor chimney sounds like breathing. She used to wait on this step until you were quiet.',
   });
   return {};
@@ -607,12 +739,15 @@ function dressMaster(root, world, mats, living, interact, lights) {
   box(root, mats.woodDark, -7.3, y + 1.1, 4.6, 0.4, 2.1, 1.4);
   addColFurniture(world, -7.3, y + 1.1, 4.6, 0.4, 2.1, 1.4);
   addCurtains(root, mats, living, -5.1, y + 1.4, 6.05, 1.2, 1.9);
-  const bedLamp = new THREE.PointLight(0xffc090, 0.45, 4.5, 1.9);
+  const bedLamp = new THREE.PointLight(0xffd0a0, 0.95, 6, 1.7);
   bedLamp.position.set(-4.2, y + 0.95, 2.2);
   root.add(bedLamp);
-  lights.push({ light: bedLamp, base: 0.45, flicker: 0.05, id: 'master', toggle: true, on: true });
+  lights.push({ light: bedLamp, base: 0.95, flicker: 0.04, id: 'master', toggle: true, on: true });
   box(root, mats.wood, -4.2, y + 0.45, 2.2, 0.35, 0.55, 0.35);
   box(root, mats.lampShade, -4.2, y + 0.85, 2.2, 0.22, 0.16, 0.22);
+  ceilingLamp(root, mats, lights, -5.0, y + 2.85, 2.8, { id: 'master-ceil', base: 1.55, dist: 8 });
+  makeDrawer(root, world, mats, living, interact, -4.55, y + 0.28, 2.55, 0.45, 0.16, 0.38, 'z',
+    'Bedside drawer', 'Hairpins and a folded note: the house hears the loud ones first.', null);
   interact.push({
     kind: 'light', id: 'master-lamp', title: 'Bedside lamp',
     pos: new THREE.Vector3(-4.2, y + 0.8, 2.2), reach: 1.5, lightId: 'master',
@@ -639,10 +774,13 @@ function dressChild(root, world, mats, living, interact, lights) {
     pos: new THREE.Vector3(2.4, y + 1.4, 3.4), reach: 1.6, frag: 'ren',
     body: 'A house with a red mouth. Under it, in crayon: REN. The last of her name. You wrote it when you still thought the grate was a face.',
   });
-  const cLamp = new THREE.PointLight(0xffd4a8, 0.5, 5, 1.8);
+  const cLamp = new THREE.PointLight(0xffe0b8, 1.05, 7, 1.6);
   cLamp.position.set(4.4, y + 1.7, 3.2);
   root.add(cLamp);
-  lights.push({ light: cLamp, base: 0.5, flicker: 0.06, id: 'child', toggle: true, on: true });
+  lights.push({ light: cLamp, base: 1.05, flicker: 0.04, id: 'child', toggle: true, on: true });
+  ceilingLamp(root, mats, lights, 5.2, y + 2.85, 3.2, { id: 'child-ceil', base: 1.45, dist: 7.5 });
+  makeCupboard(root, world, mats, living, interact, 7.35, y + 0.7, 4.4, 0.45, 1.1, 0.5, 'left',
+    'Toy cupboard', 'Wooden animals face the wall. One has a mouth drawn on in red.');
   addCurtains(root, mats, living, 5.1, y + 1.4, 6.05, 1.2, 1.9);
   interact.push({
     kind: 'light', id: 'child-light', title: 'Nursery lamp',
@@ -661,14 +799,14 @@ function dressCellar(root, world, mats, living, interact, lights) {
       flue.rotation.y = Math.sin(t * 0.4) * 0.05;
     },
   });
-  const cold = new THREE.PointLight(0x88a0b8, 0.35, 7, 1.6);
-  cold.position.set(0.4, y + 1.8, 1.4);
+  const cold = new THREE.PointLight(0xb8c8d8, 0.95, 9, 1.45);
+  cold.position.set(0.4, y + 1.9, 1.4);
   root.add(cold);
-  lights.push({ light: cold, base: 0.35, flicker: 0.03, id: 'cellar' });
-  const furnace = new THREE.PointLight(0xff5010, 0.55, 4.5, 2);
+  lights.push({ light: cold, base: 0.95, flicker: 0.02, id: 'cellar' });
+  const furnace = new THREE.PointLight(0xff6018, 1.05, 6, 1.8);
   furnace.position.set(-2.2, y + 0.7, 0.2);
   root.add(furnace);
-  lights.push({ light: furnace, base: 0.55, flicker: 0.18, id: 'furnace' });
+  lights.push({ light: furnace, base: 1.05, flicker: 0.14, id: 'furnace' });
 
   interact.push({
     kind: 'key', id: 'damper', title: 'Damper wheel',

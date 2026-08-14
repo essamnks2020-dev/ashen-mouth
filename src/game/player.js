@@ -1,17 +1,17 @@
 import * as THREE from 'three';
-import { clamp, damp, dampA, DEG } from '../core/util.js';
+import { clamp, damp } from '../core/util.js';
 
 export class Player {
   constructor(camera, world) {
     this.cam = camera;
     this.world = world;
-    this.pos = new THREE.Vector3(0, 0.45, 38.5);
+    this.pos = new THREE.Vector3(0, 0.05, 4.55);
     this.vel = new THREE.Vector3();
-    this.yaw = Math.PI;
-    this.pitch = -0.12;
-    this.radius = 0.32;
+    this.yaw = 0;
+    this.pitch = -0.04;
+    this.radius = 0.28;
     this.height = 1.7;
-    this.eye = 1.62;
+    this.eye = 1.58;
     this.grounded = true;
     this.crouch = 0;
     this.lanternOn = true;
@@ -21,13 +21,18 @@ export class Player {
     this.surface = 'wood';
     this.moved = 0;
     this.fovBase = 68;
+    this._eyeSmoothed = 1.58;
 
-    this.lantern = new THREE.SpotLight(0xffe2b8, 1.6, 14, 0.55, 0.45, 1.4);
+    this.lantern = new THREE.SpotLight(0xffe8c8, 1.35, 12, 0.62, 0.5, 1.35);
     this.lantern.castShadow = false;
     camera.add(this.lantern);
-    this.lantern.position.set(0.18, -0.12, 0.1);
-    this.lantern.target.position.set(0, -0.05, -1);
+    this.lantern.position.set(0.16, -0.1, 0.08);
+    this.lantern.target.position.set(0, -0.04, -1);
     camera.add(this.lantern.target);
+
+    this.fill = new THREE.PointLight(0xffe4c0, 0.28, 4.5, 2);
+    this.fill.position.set(0, -0.05, 0.15);
+    camera.add(this.fill);
 
     this.hand = new THREE.Group();
     camera.add(this.hand);
@@ -53,11 +58,12 @@ export class Player {
 
     const crouchWant = input.held('ControlLeft') || input.held('ControlRight') || input.held('KeyC') ? 1 : 0;
     this.crouch = damp(this.crouch, crouchWant, 10, dt);
-    this.height = lerp(1.7, 1.15, this.crouch);
-    this.eye = lerp(1.62, 1.05, this.crouch);
+    this.height = lerp(1.7, 1.18, this.crouch);
+    this.eye = lerp(1.58, 1.08, this.crouch);
 
+    const onRamp = this.world.onRamp;
     const slow = input.held('ShiftLeft') || input.held('ShiftRight') || this.crouch > 0.5;
-    const speed = slow ? 1.55 : 3.15;
+    const speed = onRamp ? (slow ? 1.35 : 2.35) : (slow ? 1.55 : 3.05);
 
     let ix = 0, iz = 0;
     if (input.held('KeyW') || input.held('ArrowUp')) iz -= 1;
@@ -71,40 +77,36 @@ export class Player {
     const s = Math.sin(this.yaw), c = Math.cos(this.yaw);
     const wishX = ix * c + iz * s;
     const wishZ = -ix * s + iz * c;
-    const accel = this.grounded ? 18 : 4;
+    const accel = this.grounded ? 16 : 4;
     this.vel.x = damp(this.vel.x, wishX * speed, accel, dt);
     this.vel.z = damp(this.vel.z, wishZ * speed, accel, dt);
 
-    if (input.pressed('Space') && this.grounded) {
-      this.vel.y = 4.6;
-      this.grounded = false;
-      emitSound(this.pos, 5, 'land');
-    }
-
     if (input.pressed('KeyF')) this.lanternOn = !this.lanternOn;
-    this.lanternH = damp(this.lanternH, this.lanternOn ? 1 : 0.08, 8, dt);
-    this.lantern.intensity = 1.45 * this.lanternH;
-    this.lantern.distance = 11 * this.lanternH + 2;
+    this.lanternH = damp(this.lanternH, this.lanternOn ? 1 : 0.06, 8, dt);
+    this.lantern.intensity = 1.35 * this.lanternH;
+    this.lantern.distance = 12 * this.lanternH + 2;
+    this.fill.intensity = 0.22 + 0.18 * this.lanternH;
     if (this._flame) this._flame.scale.setScalar(0.7 + this.lanternH * 0.6);
 
     this.grounded = this.world.moveCapsule(this.pos, this.vel, this.radius, this.height, dt);
 
     const spd = Math.hypot(this.vel.x, this.vel.z);
     this.moved = spd;
-    if (this.grounded && spd > 0.4) {
-      this.bob += dt * spd * 2.1;
+    if (this.grounded && spd > 0.35) {
+      this.bob += dt * spd * (this.world.onRamp ? 2.8 : 2.05);
       this.stepT += dt * spd;
-      const interval = slow ? 0.62 : 0.38;
+      const interval = this.world.onRamp ? 0.34 : (slow ? 0.62 : 0.4);
       if (this.stepT > interval) {
         this.stepT = 0;
-        const power = slow ? 1.6 : 5.5;
+        const power = slow ? 1.4 : (this.world.onRamp ? 3.2 : 5.0);
         emitSound(this.pos, power, 'step');
       }
     } else this.stepT = 0;
 
-    const bobY = Math.sin(this.bob * 2) * spd * 0.012;
-    const bobX = Math.cos(this.bob) * spd * 0.006;
-    this.cam.position.set(this.pos.x + bobX, this.pos.y + this.eye + bobY, this.pos.z);
+    const bobY = Math.sin(this.bob * 2) * spd * (this.world.onRamp ? 0.018 : 0.01);
+    const bobX = Math.cos(this.bob) * spd * 0.005;
+    this._eyeSmoothed = damp(this._eyeSmoothed, this.eye, 14, dt);
+    this.cam.position.set(this.pos.x + bobX, this.pos.y + this._eyeSmoothed + bobY, this.pos.z);
     this.cam.rotation.order = 'YXZ';
     this.cam.rotation.y = this.yaw;
     this.cam.rotation.x = this.pitch;

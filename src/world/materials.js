@@ -192,10 +192,10 @@ export function makeMaterials(quality) {
     side: opts.side ?? THREE.FrontSide,
   });
 
-  const wood = std(woodMap, { roughness: 0.72 });
-  const woodDark = std(woodMap, { roughness: 0.78, color: 0x6a4a32 });
-  const floor = std(floorMap, { roughness: 0.68 });
-  const plaster = std(plasterMap, { roughness: 0.92 });
+  const wood = std(woodMap, { roughness: 0.68, color: 0xe8d0b4 });
+  const woodDark = std(woodMap, { roughness: 0.74, color: 0x8a6244 });
+  const floor = std(floorMap, { roughness: 0.62, color: 0xd4b08a });
+  const plaster = std(plasterMap, { roughness: 0.9, color: 0xf2eadc });
   const wallpaper = std(paperMap, { roughness: 0.88 });
   const wallpaperWarm = std(paperWarm, { roughness: 0.9 });
   const brick = std(brickMap, { roughness: 0.95 });
@@ -233,7 +233,7 @@ export function makeMaterials(quality) {
     color: 0x2a1618, roughness: 0.86, side: THREE.DoubleSide,
   });
   const lampShade = new THREE.MeshStandardMaterial({
-    color: 0xf0d8b0, emissive: 0xffc070, emissiveIntensity: 0.55, roughness: 0.7, side: THREE.DoubleSide,
+    color: 0xf8e2c0, emissive: 0xffc070, emissiveIntensity: 1.15, roughness: 0.65, side: THREE.DoubleSide,
   });
   const white = new THREE.MeshStandardMaterial({ color: 0xe6ddd0, roughness: 0.7 });
   const black = new THREE.MeshStandardMaterial({ color: 0x0a0908, roughness: 0.9 });

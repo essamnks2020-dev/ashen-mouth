@@ -39,15 +39,15 @@ class Game {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.12;
+    this.renderer.toneMappingExposure = 1.48;
     this.renderer.shadowMap.enabled = this.settings.quality === 'high';
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.setClearColor(NIGHT, 1);
     this._resize();
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x121820, 0.018);
-    this.scene.background = new THREE.Color(0x0a1018);
+    this.scene.fog = new THREE.FogExp2(0x1a2430, 0.0075);
+    this.scene.background = new THREE.Color(0x0c141c);
 
     this.camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 220);
 

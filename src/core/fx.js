@@ -11,9 +11,9 @@ const GradeShader = {
     tDiffuse: { value: null },
     uTime: { value: 0 },
     uRes: { value: new THREE.Vector2(1, 1) },
-    uVignette: { value: 0.42 },
-    uGrain: { value: 0.012 },
-    uCA: { value: 0.0007 },
+    uVignette: { value: 0.18 },
+    uGrain: { value: 0.006 },
+    uCA: { value: 0.0004 },
     uListen: { value: 0 },
     uHunt: { value: 0 },
     uTaken: { value: 0 },
@@ -44,9 +44,9 @@ const GradeShader = {
       col.g = texture2D(tDiffuse, uv).g;
       col.b = texture2D(tDiffuse, uv - off).b;
 
-      col.r = pow(col.r, 0.96);
-      col.b = pow(col.b, 1.06);
-      col *= vec3(1.04, 0.99, 0.94);
+      col.r = pow(col.r, 0.94);
+      col.b = pow(col.b, 1.02);
+      col *= vec3(1.08, 1.02, 0.96);
 
       float g = (hash(uv * uRes * 0.35 + uTime * 8.0) - 0.5) * uGrain;
       col += g;
@@ -92,10 +92,10 @@ export class PostFX {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
 
     if (q === 'high') {
-      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.22, 0.5, 0.82);
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.16, 0.45, 0.86);
       this.composer.addPass(this.bloom);
     } else if (q === 'medium') {
-      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.12, 0.4, 0.88);
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.1, 0.4, 0.9);
       this.composer.addPass(this.bloom);
     } else {
       this.bloom = null;
