@@ -164,7 +164,8 @@ export function stairs(ctx, spec) {
     box(ctx, ctx.mats.wood, x, yTop - 0.018, z, w, 0.036, RUN + 0.02, P);
     box(ctx, ctx.mats.woodDark, x, yTop - 0.002, z + dirZ * RUN * 0.42, w, 0.02, 0.04, { ...P, cast: false });
     const prevY = yLow + rise * i;
-    box(ctx, ctx.mats.woodDark, x, (prevY + yTop) * 0.5, z - dirZ * (RUN * 0.5 - 0.02), w - 0.02, rise, 0.045, P);
+    // Closed riser face — thin open stringers read as floating slabs.
+    box(ctx, ctx.mats.woodDark, x, (prevY + yTop) * 0.5, z - dirZ * (RUN * 0.5 - 0.01), w - 0.02, rise - 0.01, 0.055, P);
   }
 
   const zTop = zBot + dirZ * TREADS * RUN;
@@ -241,14 +242,21 @@ export function placeWindow(ctx, spec) {
   box(ctx, ctx.mats.wood, x, y, z, isWE ? 0.09 : w + 0.12, h + 0.12, isWE ? w + 0.12 : 0.09, { collide: false, cast: false });
   box(ctx, ctx.mats.woodDark, x, spec.y + WIN_SILL - 0.04, z + (isWE ? 0 : inward * 0.04),
     isWE ? 0.12 : w + 0.16, 0.06, isWE ? w + 0.16 : 0.12, { collide: false });
-  const glass = box(ctx, ctx.mats.glassWarm, x, y, z,
-    isWE ? 0.03 : w - 0.04, h - 0.06, isWE ? w - 0.04 : 0.03, { collide: false, cast: false });
+  // Recess glass slightly into the wall so the frame reads from the street.
+  const inset = isWE ? inward * 0.03 : inward * 0.03;
+  const gx = isWE ? x + inset : x;
+  const gz = isWE ? z : z + inset;
+  const glass = box(ctx, ctx.mats.glassWarm, gx, y, gz,
+    isWE ? 0.02 : w - 0.1, h - 0.12, isWE ? w - 0.1 : 0.02, { collide: false, cast: false });
   glass.castShadow = false;
-  const glow = box(ctx, ctx.mats.windowGlow, x, y, z,
-    isWE ? 0.02 : w - 0.08, h - 0.1, isWE ? w - 0.08 : 0.02, { collide: false, cast: false, recv: false });
+  const glow = box(ctx, ctx.mats.windowGlow, gx, y, gz,
+    isWE ? 0.015 : w - 0.18, h - 0.2, isWE ? w - 0.18 : 0.015, { collide: false, cast: false, recv: false });
   glow.castShadow = false;
-  box(ctx, ctx.mats.wood, x, y, z, isWE ? 0.035 : 0.03, h - 0.08, isWE ? 0.03 : 0.035, { collide: false, cast: false });
-  box(ctx, ctx.mats.wood, x, y, z, isWE ? 0.035 : w - 0.08, 0.03, isWE ? w - 0.08 : 0.035, { collide: false, cast: false });
+  // Muntins — crossbars so night windows don't read as solid plaques.
+  box(ctx, ctx.mats.woodDark, gx, y, gz, isWE ? 0.025 : 0.028, h - 0.14, isWE ? 0.028 : 0.025, { collide: false, cast: false });
+  box(ctx, ctx.mats.woodDark, gx, y, gz, isWE ? 0.025 : w - 0.14, 0.028, isWE ? w - 0.14 : 0.025, { collide: false, cast: false });
+  box(ctx, ctx.mats.wood, x, y, z, isWE ? 0.04 : 0.035, h - 0.08, isWE ? 0.035 : 0.04, { collide: false, cast: false });
+  box(ctx, ctx.mats.wood, x, y, z, isWE ? 0.04 : w - 0.08, 0.035, isWE ? w - 0.08 : 0.04, { collide: false, cast: false });
 
   if (spec.curtains && ctx.quality !== 'low') {
     const cz = isWE ? z : z + inward * 0.12;
@@ -393,13 +401,18 @@ export function sofa(ctx, x, y, z, rotY) {
   ctx.root.add(g);
   const P = { parent: g };
   const f = ctx.mats.fabric;
-  box(ctx, ctx.mats.woodDark, 0, 0.08, 0, 2.05, 0.08, 0.82, P);
-  box(ctx, f, 0, 0.28, 0.05, 1.95, 0.28, 0.72, P);
-  box(ctx, f, 0, 0.52, -0.28, 1.95, 0.42, 0.22, P);
-  box(ctx, f, -0.98, 0.42, 0.04, 0.18, 0.48, 0.78, P);
-  box(ctx, f, 0.98, 0.42, 0.04, 0.18, 0.48, 0.78, P);
-  box(ctx, ctx.mats.linen, -0.48, 0.46, 0.06, 0.88, 0.1, 0.58, { ...P, cast: false });
-  box(ctx, ctx.mats.linen, 0.48, 0.46, 0.06, 0.88, 0.1, 0.58, { ...P, cast: false });
+  // Skirt + legs so it doesn't read as one wood crate.
+  box(ctx, ctx.mats.woodDark, 0, 0.06, 0, 2.08, 0.1, 0.84, P);
+  for (const [lx, lz] of [[-0.92, -0.32], [0.92, -0.32], [-0.92, 0.32], [0.92, 0.32]]) {
+    box(ctx, ctx.mats.woodDark, lx, 0.09, lz, 0.06, 0.18, 0.06, P);
+  }
+  box(ctx, f, 0, 0.3, 0.06, 1.92, 0.26, 0.7, P);
+  box(ctx, f, 0, 0.58, -0.3, 1.92, 0.5, 0.18, P);
+  box(ctx, f, -0.98, 0.44, 0.02, 0.16, 0.52, 0.76, P);
+  box(ctx, f, 0.98, 0.44, 0.02, 0.16, 0.52, 0.76, P);
+  box(ctx, ctx.mats.linen, -0.48, 0.48, 0.08, 0.86, 0.12, 0.56, { ...P, cast: false });
+  box(ctx, ctx.mats.linen, 0.48, 0.48, 0.08, 0.86, 0.12, 0.56, { ...P, cast: false });
+  box(ctx, ctx.mats.linen, 0, 0.72, -0.28, 1.7, 0.1, 0.12, { ...P, cast: false });
   ctx.world.addBox(x, y + 0.4, z, 2.15, 0.82, 0.92, { surface: 'wood' });
 }
 
@@ -425,12 +438,17 @@ export function bed(ctx, x, y, z, rotY, twin = false) {
   const P = { parent: g };
   const w = twin ? 1.05 : 1.48;
   const d = twin ? 1.85 : 2.05;
-  box(ctx, ctx.mats.woodDark, 0, 0.18, 0, w + 0.08, 0.22, d + 0.08, P);
-  box(ctx, ctx.mats.linen, 0, 0.38, 0.04, w, 0.16, d - 0.1, P);
-  box(ctx, ctx.mats.fabric, 0, 0.48, 0.02, w - 0.06, 0.06, d - 0.22, { ...P, cast: false });
-  box(ctx, ctx.mats.woodDark, 0, 0.62, -d * 0.5 + 0.04, w + 0.1, 0.95, 0.08, P);
-  box(ctx, ctx.mats.linen, -w * 0.22, 0.52, -d * 0.32, 0.38, 0.12, 0.28, { ...P, cast: false });
-  box(ctx, ctx.mats.linen, w * 0.22, 0.52, -d * 0.32, 0.38, 0.12, 0.28, { ...P, cast: false });
+  // Frame rails + legs, not one wood brick.
+  box(ctx, ctx.mats.woodDark, 0, 0.22, 0, w + 0.1, 0.12, d + 0.1, P);
+  for (const [lx, lz] of [[-w * 0.45, -d * 0.45], [w * 0.45, -d * 0.45], [-w * 0.45, d * 0.45], [w * 0.45, d * 0.45]]) {
+    box(ctx, ctx.mats.woodDark, lx, 0.14, lz, 0.07, 0.28, 0.07, P);
+  }
+  box(ctx, ctx.mats.linen, 0, 0.4, 0.04, w, 0.18, d - 0.12, P);
+  box(ctx, ctx.mats.fabric, 0, 0.52, 0.08, w - 0.08, 0.08, d * 0.55, { ...P, cast: false });
+  box(ctx, ctx.mats.woodDark, 0, 0.7, -d * 0.5 + 0.04, w + 0.12, 1.05, 0.07, P);
+  box(ctx, ctx.mats.woodDark, 0, 0.42, d * 0.5 - 0.04, w + 0.08, 0.48, 0.06, P);
+  box(ctx, ctx.mats.linen, -w * 0.22, 0.56, -d * 0.28, 0.4, 0.14, 0.3, { ...P, cast: false });
+  box(ctx, ctx.mats.linen, w * 0.22, 0.56, -d * 0.28, 0.4, 0.14, 0.3, { ...P, cast: false });
   ctx.world.addBox(x, y + 0.35, z, w + 0.15, 0.7, d + 0.15, { surface: 'wood' });
 }
 
@@ -536,23 +554,44 @@ export function makeCupboard(ctx, x, y, z, w, h, d, hinge, title, body) {
 
 export function kitchenRun(ctx, x, z0, z1) {
   const z = (z0 + z1) * 0.5, d = Math.abs(z1 - z0);
-  box(ctx, ctx.mats.wood, x, 0.45, z, 0.58, 0.9, d, { collide: true });
-  box(ctx, ctx.mats.porcelain, x - 0.02, 0.91, z, 0.6, 0.04, d, { collide: false });
-  box(ctx, ctx.mats.porcelain, x - 0.28, 1.22, z, 0.02, 0.58, d, { collide: false, cast: false });
-  box(ctx, ctx.mats.wood, x, 1.82, z, 0.34, 0.72, d - 0.4, { collide: false });
+  // Base cabinets + toe kick + door faces — not one wood volume.
+  box(ctx, ctx.mats.woodDark, x, 0.05, z, 0.56, 0.1, d, { collide: false, cast: false });
+  box(ctx, ctx.mats.wood, x, 0.48, z, 0.56, 0.76, d, { collide: true });
+  box(ctx, ctx.mats.porcelain, x - 0.02, 0.9, z, 0.6, 0.05, d + 0.04, { collide: false });
+  const doors = Math.max(3, Math.floor(d / 0.72));
+  for (let i = 0; i < doors; i++) {
+    const t = (i + 0.5) / doors;
+    const dz = z0 + (z1 - z0) * t;
+    const dh = d / doors - 0.06;
+    box(ctx, ctx.mats.woodDark, x - 0.29, 0.48, dz, 0.03, 0.62, Math.max(0.28, dh), { collide: false, cast: false });
+    box(ctx, ctx.mats.brass, x - 0.31, 0.48, dz, 0.02, 0.08, 0.02, { collide: false, cast: false });
+  }
+  // Backsplash tile strip (short, not a floating white slab).
+  box(ctx, ctx.mats.porcelain, x - 0.26, 1.18, z, 0.03, 0.42, d - 0.1, { collide: false, cast: false });
+  box(ctx, ctx.mats.wood, x - 0.05, 1.78, z, 0.36, 0.62, d - 0.35, { collide: false });
+  for (let i = 0; i < Math.max(2, doors - 1); i++) {
+    const t = (i + 0.5) / Math.max(2, doors - 1);
+    const dz = (z0 + 0.2) + ((z1 - z0) - 0.4) * t;
+    box(ctx, ctx.mats.woodDark, x - 0.24, 1.78, dz, 0.03, 0.5, 0.42, { collide: false, cast: false });
+  }
 }
 
 export function stove(ctx, x, y, z) {
   box(ctx, ctx.mats.iron, x, 0.46, z, 0.62, 0.92, 0.58, { collide: true });
+  box(ctx, ctx.mats.iron, x - 0.28, 0.55, z, 0.04, 0.55, 0.42, { collide: false, cast: false });
   for (const [lx, lz] of [[-0.14, -0.12], [0.14, -0.12], [-0.14, 0.12], [0.14, 0.12]]) {
     cyl(ctx, ctx.mats.iron, x + lx, 0.94, z + lz, 0.09, 0.09, 0.03, { cast: false });
   }
   box(ctx, ctx.mats.iron, x, 1.15, z, 0.08, 0.45, 0.08, { collide: false });
+  box(ctx, ctx.mats.brass, x - 0.2, 0.72, z + 0.2, 0.04, 0.04, 0.04, { collide: false, cast: false });
 }
 
 export function fridge(ctx, x, y, z) {
   box(ctx, ctx.mats.iron, x, 0.88, z, 0.62, 1.76, 0.58, { collide: true });
-  box(ctx, ctx.mats.brass, x - 0.28, 0.95, z, 0.03, 0.12, 0.03, { collide: false, cast: false });
+  box(ctx, ctx.mats.iron, x - 0.3, 1.15, z, 0.04, 1.1, 0.5, { collide: false, cast: false });
+  box(ctx, ctx.mats.iron, x - 0.3, 0.42, z, 0.04, 0.55, 0.5, { collide: false, cast: false });
+  box(ctx, ctx.mats.brass, x - 0.33, 1.15, z + 0.12, 0.03, 0.22, 0.03, { collide: false, cast: false });
+  box(ctx, ctx.mats.brass, x - 0.33, 0.42, z + 0.12, 0.03, 0.14, 0.03, { collide: false, cast: false });
 }
 
 export function setDoorOpen(door, open) {

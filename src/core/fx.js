@@ -92,10 +92,10 @@ export class PostFX {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
 
     if (q === 'high') {
-      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.16, 0.45, 0.86);
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.09, 0.38, 0.9);
       this.composer.addPass(this.bloom);
     } else if (q === 'medium') {
-      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.1, 0.4, 0.9);
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.06, 0.35, 0.92);
       this.composer.addPass(this.bloom);
     } else {
       this.bloom = null;

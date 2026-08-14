@@ -23,7 +23,7 @@ export class Player {
     this.fovBase = 68;
     this._eyeSmoothed = 1.58;
 
-    this.lantern = new THREE.SpotLight(0xffe8c8, 1.35, 12, 0.62, 0.5, 1.35);
+    this.lantern = new THREE.SpotLight(0xffe8c8, 0.95, 11, 0.58, 0.55, 1.4);
     this.lantern.castShadow = false;
     camera.add(this.lantern);
     this.lantern.position.set(0.16, -0.1, 0.08);
@@ -83,9 +83,9 @@ export class Player {
 
     if (input.pressed('KeyF')) this.lanternOn = !this.lanternOn;
     this.lanternH = damp(this.lanternH, this.lanternOn ? 1 : 0.06, 8, dt);
-    this.lantern.intensity = 1.35 * this.lanternH;
-    this.lantern.distance = 12 * this.lanternH + 2;
-    this.fill.intensity = 0.22 + 0.18 * this.lanternH;
+    this.lantern.intensity = 0.95 * this.lanternH;
+    this.lantern.distance = 11 * this.lanternH + 2;
+    this.fill.intensity = 0.16 + 0.12 * this.lanternH;
     if (this._flame) this._flame.scale.setScalar(0.7 + this.lanternH * 0.6);
 
     this.grounded = this.world.moveCapsule(this.pos, this.vel, this.radius, this.height, dt);

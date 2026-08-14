@@ -79,7 +79,9 @@ function tree(ctx, x, z) {
 }
 
 function hedge(ctx, x, z) {
-  box(ctx, ctx.mats.leaf, x, 0.38, z, 1.05, 0.76, 0.42, { collide: false, cast: false });
+  // Slightly irregular mass so hedges aren't perfect crates.
+  box(ctx, ctx.mats.leaf, x, 0.36, z, 1.0, 0.72, 0.4, { collide: false, cast: false });
+  box(ctx, ctx.mats.leaf, x + 0.18, 0.48, z + 0.05, 0.55, 0.5, 0.32, { collide: false, cast: false });
 }
 
 export function buildPorch(ctx) {

@@ -4,14 +4,16 @@ import { toggleLight } from '../world/house.js';
 import { GRATE, SPAWN, MAIN_STAIR } from '../world/plan.js';
 
 const INTRO = [
-  { t: 0.0, pos: [7.4, 2.15, 16.8], look: [0.1, 3.4, 2.2], card: '14 ASHEN LANE', line: 'The Holloway house. Tomorrow the sign goes up.' },
-  { t: 5.5, pos: [1.4, 1.62, 12.4], look: [0.05, 2.1, 5.4], card: '', line: 'You have the key. Mother said: go in, close the flue, do not stay after dark.' },
-  { t: 11.0, pos: [0.05, 1.55, 7.35], look: [0, 1.45, 5.15], card: '', line: 'The door still knows your hand.' },
-  { t: 15.5, pos: [-0.35, 1.56, 4.35], look: [-1.2, 1.4, 4.6], card: '', line: 'This is the house you grew up in. The clock still keeps her time.' },
-  { t: 20.5, pos: [-3.4, 1.48, 2.85], look: [GRATE.x + 0.4, 0.75, GRATE.z], card: '', line: 'After Father died she burned every tape he recorded. She fed them to the grate.' },
-  { t: 26.0, pos: [-0.4, 1.62, 3.9], look: [MAIN_STAIR.x, 1.8, MAIN_STAIR.zBot - 0.8], card: 'ASHEN MOUTH', line: 'Find her name. Take the damper from the cellar. Whisper it at the grate.' },
-  { t: 31.0, pos: [SPAWN.x, 1.58, SPAWN.z], look: [SPAWN.x, 1.4, SPAWN.z - 2.4], card: '', line: 'Whisper if you must. Never shout.' },
-  { t: 34.5, pos: [SPAWN.x, 1.58, SPAWN.z], look: [SPAWN.x, 1.4, SPAWN.z - 2.4], card: '', line: '' },
+  { t: 0.0, pos: [8.2, 2.35, 17.6], look: [0.15, 3.6, 2.4], card: '14 ASHEN LANE', line: 'The Holloway house. Tomorrow the sign goes up.' },
+  { t: 4.2, pos: [3.6, 1.72, 14.2], look: [0.1, 2.4, 5.6], card: '', line: 'You have the key. Mother said: go in, close the flue, do not stay after dark.' },
+  { t: 8.0, pos: [0.4, 1.55, 11.4], look: [0.05, 1.9, 6.2], card: '', line: 'The yard still knows your feet.' },
+  { t: 11.5, pos: [0.05, 1.52, 8.15], look: [0, 1.55, 5.35], card: '', line: 'The porch light never went out.' },
+  { t: 14.8, pos: [0.02, 1.5, 6.55], look: [0, 1.4, 5.15], card: '', line: 'The door still knows your hand.' },
+  { t: 18.2, pos: [-0.35, 1.56, 4.55], look: [-0.2, 1.55, 2.2], card: '', line: 'This is the house you grew up in. Clock. Coat. Stairs.' },
+  { t: 22.5, pos: [-3.15, 1.48, 3.05], look: [GRATE.x + 0.45, 0.78, GRATE.z], card: '', line: 'After Father died she burned every tape. She fed them to the grate.' },
+  { t: 27.0, pos: [-0.35, 1.6, 3.7], look: [MAIN_STAIR.x, 2.1, MAIN_STAIR.zBot - 0.6], card: 'ASHEN MOUTH', line: 'Find her name. Take the damper from the cellar. Whisper it at the grate.' },
+  { t: 31.2, pos: [SPAWN.x, 1.58, SPAWN.z], look: [SPAWN.x, 1.35, SPAWN.z - 2.2], card: '', line: 'Whisper if you must. Never shout.' },
+  { t: 34.5, pos: [SPAWN.x, 1.58, SPAWN.z], look: [SPAWN.x, 1.35, SPAWN.z - 2.2], card: '', line: '' },
 ];
 
 export class Story {

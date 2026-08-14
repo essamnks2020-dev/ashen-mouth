@@ -289,7 +289,7 @@ class Game {
     if (this.mode === 'intro') {
       if (this.player) { this.player.lantern.visible = false; this.player.hand.visible = false; }
       const card = this.story.intro(dt, this.camera);
-      if (this.level.frontDoor) this.level.frontDoor.want = this.story.introT > 13.2 ? 1 : 0;
+      if (this.level.frontDoor) this.level.frontDoor.want = this.story.introT > 14.5 ? 1 : 0;
       $('intro-card').textContent = card.card || '';
       $('intro-radio').textContent = card.line || '';
       if (this.input.pressed('Space') || this.input.pressed('Escape') || this.input.pressed('Enter')) this._skipIntro();
