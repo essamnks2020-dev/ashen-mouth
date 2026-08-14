@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="ASHEN MOUTH — a coastal radio-monastery. The saint hunts sound. Silence is stealth." />
+<meta name="theme-color" content="#0c0907" />
+<title>ASHEN MOUTH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Spectral:ital,wght@0,400;0,600;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./src/ui/style.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230c0907' width='100' height='100'/><circle cx='50' cy='38' r='14' fill='none' stroke='%23b08d57' stroke-width='6'/><circle cx='50' cy='58' r='10' fill='none' stroke='%238a6a3a' stroke-width='5'/><circle cx='50' cy='74' r='7' fill='none' stroke='%236e5430' stroke-width='4'/></svg>" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/build/three.module.js",
+    "three/addons/": "./vendor/three/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="viewport">
+  <canvas id="gl"></canvas>
+</div>
+
+<div id="boot" class="screen active">
+  <div class="boot-inner">
+    <div class="boot-mark" aria-hidden="true"></div>
+    <div class="boot-logo">ASHEN<br>MOUTH</div>
+    <div class="boot-bar"><i id="boot-fill"></i></div>
+    <div class="boot-status" id="boot-status">tuning the coil…</div>
+  </div>
+</div>
+
+<div id="title" class="screen">
+  <div class="title-veil"></div>
+  <div class="title-col">
+    <div class="tl-sub">A LISTENING HORROR</div>
+    <h1 class="tl-main">ASHEN<br>MOUTH</h1>
+    <p class="tl-tag">The saint hunts sound. Your voice is the threat.</p>
+    <nav class="title-nav">
+      <button class="tm" data-act="play"><b>ENTER THE STACK</b><span>Click to lock the mouse · keep quiet</span></button>
+      <button class="tm" data-act="settings"><b>SETTINGS</b><span>Graphics, microphone, volume</span></button>
+    </nav>
+    <p class="tl-foot">WASD move · SHIFT slow · CTRL crouch · E use · F lantern · T known sounds · ESC pause</p>
+  </div>
+</div>
+
+<div id="intro" class="screen">
+  <div class="intro-radio" id="intro-radio"></div>
+  <div class="intro-card" id="intro-card"></div>
+  <button class="intro-skip" id="intro-skip">SKIP</button>
+</div>
+
+<div id="hud" class="overlay">
+  <div class="hud-top">
+    <div class="frag" id="hud-frag">— — —</div>
+    <div class="fork" id="hud-fork"></div>
+  </div>
+  <div class="cross" id="cross"></div>
+  <div class="prompt" id="prompt"></div>
+  <div class="inspect" id="inspect">
+    <div class="ins-title" id="ins-title"></div>
+    <div class="ins-body" id="ins-body"></div>
+  </div>
+  <div class="hint" id="hint"></div>
+  <div class="hud-bot">
+    <div class="meter">
+      <span>YOUR SOUND</span>
+      <i><b id="meter-fill"></b></i>
+    </div>
+    <div class="mic" id="mic-pill">MIC</div>
+    <div class="listen" id="listen-pill">IT IS LISTENING</div>
+  </div>
+  <div id="phrases" class="phrases">
+    <div class="ph-h">KNOWN SOUNDS · whisper with 1–9 · hold V to shape air</div>
+    <div id="phrase-list"></div>
+  </div>
+  <div class="mobile-hint" id="mobile-hint">Left stick move · right look · tap E zone to use</div>
+</div>
+
+<div id="pause" class="screen">
+  <div class="panel">
+    <h2>THE COIL HOLDS</h2>
+    <button class="tm" data-act="resume"><b>RESUME</b></button>
+    <button class="tm" data-act="settings"><b>SETTINGS</b></button>
+    <button class="tm" data-act="menu"><b>ABANDON THE STACK</b></button>
+  </div>
+</div>
+
+<div id="settings" class="screen">
+  <div class="panel wide">
+    <div class="panel-head"><h2>SETTINGS</h2><button class="ghost" data-act="back">BACK</button></div>
+    <div class="set-grid">
+      <label>GRAPHICS
+        <select id="set-quality">
+          <option value="high">HIGH</option>
+          <option value="medium">MEDIUM</option>
+          <option value="low">LOW</option>
+        </select>
+      </label>
+      <label>LOOK SENSITIVITY
+        <input id="set-sens" type="range" min="0.3" max="2.2" step="0.05" />
+      </label>
+      <label>MASTER VOLUME
+        <input id="set-master" type="range" min="0" max="1" step="0.01" />
+      </label>
+      <label class="chk"><input type="checkbox" id="set-mute" /> MUTE</label>
+      <label class="chk"><input type="checkbox" id="set-mic" /> LISTEN TO MICROPHONE</label>
+      <label class="chk"><input type="checkbox" id="set-inverty" /> INVERT Y</label>
+    </div>
+    <p class="set-note">If the microphone is denied, hold <b>V</b> to whisper, <b>B</b> to speak, <b>N</b> to shout. Open known sounds with <b>T</b>.</p>
+  </div>
+</div>
+
+<div id="win" class="screen">
+  <div class="end-col">
+    <div class="tl-sub">THE BOATS ARE SPARED</div>
+    <h1 class="tl-main sm">STILL</h1>
+    <p class="end-body">You fed it the name it was bound with. The mouths closed on brass. The aurora, at last, remembers how to move. Relief-7, you can leave the stack.</p>
+    <button class="tm" data-act="again"><b>LISTEN AGAIN</b></button>
+  </div>
+</div>
+
+<div id="lose" class="screen">
+  <div class="end-col">
+    <div class="tl-sub">A CHILD ON THE COIL</div>
+    <h1 class="tl-main sm">TAKEN</h1>
+    <p class="end-body">It already knew your name. It only needed you to say it like you meant it. The feed goes to salt-static. Someone else will be sent at dusk.</p>
+    <button class="tm" data-act="again"><b>TRY THE VOW AGAIN</b></button>
+  </div>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
