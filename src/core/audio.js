@@ -119,16 +119,16 @@ export class AudioEngine {
 
   _ambience() {
     const c = this.ctx;
-    const wind = this._src(this.noise, true);
-    const f = this._filt('bandpass', 180, 0.7);
-    const g = this._g(0.045);
-    wind.connect(f); f.connect(g); g.connect(this.busMusic);
-    wind.start();
+    const rain = this._src(this.noise, true);
+    const f = this._filt('bandpass', 2400, 0.55);
+    const g = this._g(0.028);
+    rain.connect(f); f.connect(g); g.connect(this.busMusic);
+    rain.start();
     this._windG = g; this._windF = f;
 
-    const drone = this._osc('sine', 46);
-    const drone2 = this._osc('sine', 92.2);
-    const dg = this._g(0.03);
+    const drone = this._osc('sine', 52);
+    const drone2 = this._osc('sine', 78.5);
+    const dg = this._g(0.022);
     drone.connect(dg); drone2.connect(dg); dg.connect(this.busMusic);
     drone.start(); drone2.start();
     this._drone = drone; this._drone2 = drone2; this._droneG = dg;
@@ -235,7 +235,7 @@ export class AudioEngine {
   }
 
   saintListen(x, y, z) {
-    if (!this.ready) return;
+    if (!this.ready || this._throttle('sl', 2200)) return;
     const o = this._osc('sine', 74);
     const o2 = this._osc('triangle', 148);
     const g = this._g(0.07);

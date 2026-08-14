@@ -1,47 +1,42 @@
 import * as THREE from 'three';
 import { lerp, clamp01, damp } from '../core/util.js';
-import { setDoorOpen } from '../world/level.js';
-
-export const WORDS = {
-  orth: { glyph: 'ORTH', hint: 'a first syllable, painted into a mouth' },
-  ael: { glyph: 'AEL', hint: 'a last syllable, dittoed into a ledger' },
-  orthael: { glyph: 'ORTHAEL', hint: 'one breath. the stilling.' },
-};
+import { toggleLight } from '../world/house.js';
 
 const INTRO = [
-  { t: 0.0, pos: [2.2, 1.35, 51.0], look: [0, 9, 8], card: '', radio: '— salt static —' },
-  { t: 4.2, pos: [1.4, 2.4, 47.5], look: [0, 12, 4], card: 'RELIEF-7  ·  dusk inbound', radio: 'the boats were supposed to be spared' },
-  { t: 9.0, pos: [-3.2, 4.8, 40.0], look: [2, 14, 2], card: '', radio: 'last voice on the coil:' },
-  { t: 14.0, pos: [0.2, 3.1, 41.2], look: [0, 8, 18], card: 'a child, repeating a name', radio: 'Essam. Essam. Essam.' },
-  { t: 20.0, pos: [0.0, 2.2, 39.4], look: [0, 6, 22], card: 'ASHEN MOUTH', radio: 'it learned how to answer' },
-  { t: 26.5, pos: [0.0, 1.7, 38.6], look: [0, 1.6, 22], card: '', radio: 'silence is stealth' },
-  { t: 32.0, pos: [0.0, 2.05, 38.5], look: [0, 1.8, 22], card: '', radio: '' },
+  { t: 0.0, pos: [0.0, 1.6, 14.8], look: [0, 2.4, 6.4], card: '14 ASHEN LANE', line: 'The Holloway house. The night before they sell it.' },
+  { t: 5.5, pos: [0.2, 1.55, 9.2], look: [0, 1.7, 5.8], card: '', line: 'You have a key. You were told not to stay after dark.' },
+  { t: 11.0, pos: [0.15, 1.55, 5.5], look: [-1.4, 1.6, 4.6], card: '', line: 'Your mother asked you not to speak in this house.' },
+  { t: 16.5, pos: [-4.6, 1.45, 3.4], look: [-7.4, 0.9, 2.6], card: '', line: 'She burned Father’s tapes in the grate. Every word he recorded.' },
+  { t: 22.5, pos: [5.4, 1.5, 3.6], look: [7.1, 1.15, 4.4], card: '', line: 'The tap still drips. The clock still keeps her time.' },
+  { t: 28.0, pos: [-6.6, 1.05, 2.6], look: [-7.6, 0.7, 2.6], card: 'ASHEN MOUTH', line: 'The house learned to listen. Close the flue before morning.' },
+  { t: 34.5, pos: [0.0, 1.62, 4.55], look: [0, 1.5, 1.2], card: '', line: 'Whisper if you must. Never shout.' },
+  { t: 38.5, pos: [0.0, 1.62, 4.55], look: [0, 1.5, 1.2], card: '', line: '' },
 ];
 
 export class Story {
   constructor() {
-    this.fragments = { orth: false, ael: false, orthael: false };
-    this.hasFork = false;
+    this.fragments = { ma: false, ren: false, maren: false };
+    this.hasDamper = false;
     this.known = [];
     this.introT = 0;
     this.introDone = false;
-    this.binding = 0;
-    this.end = null; // 'bind' | 'taken'
+    this.end = null;
     this.endT = 0;
     this.woke = false;
-    this.hint = 'The dock still smells of diesel and incense.';
+    this.hint = 'You are in the house. Close the flue before morning.';
     this.inspect = null;
     this.inspectT = 0;
-    this.zone = 'dock';
+    this.zone = 'foyer';
     this.near = null;
+    this.bindT = 0;
   }
 
-  skipIntro() { this.introT = 33; this.introDone = true; }
+  skipIntro() { this.introT = 39; this.introDone = true; }
 
   intro(dt, cam) {
     this.introT += dt;
     const t = this.introT;
-    if (t >= 32.4) { this.introDone = true; return { card: '', radio: '', skippable: true }; }
+    if (t >= 38.2) { this.introDone = true; return { card: '', line: '' }; }
     let a = INTRO[0], b = INTRO[INTRO.length - 1];
     for (let i = 0; i < INTRO.length - 1; i++) {
       if (t >= INTRO[i].t && t <= INTRO[i + 1].t) { a = INTRO[i]; b = INTRO[i + 1]; break; }
@@ -53,172 +48,127 @@ export class Story {
       lerp(a.pos[1], b.pos[1], s),
       lerp(a.pos[2], b.pos[2], s),
     );
-    const lx = lerp(a.look[0], b.look[0], s);
-    const ly = lerp(a.look[1], b.look[1], s);
-    const lz = lerp(a.look[2], b.look[2], s);
-    cam.lookAt(lx, ly, lz);
-    const card = s < 0.85 ? a.card : b.card;
-    const radio = s < 0.5 ? a.radio : b.radio;
-    return { card, radio, skippable: true, t };
+    cam.lookAt(
+      lerp(a.look[0], b.look[0], s),
+      lerp(a.look[1], b.look[1], s),
+      lerp(a.look[2], b.look[2], s),
+    );
+    return { card: s < 0.82 ? a.card : b.card, line: s < 0.55 ? a.line : b.line };
   }
 
   zoneOf(p, zones) {
+    let best = this.zone, bestY = 99;
     for (const [k, z] of Object.entries(zones)) {
-      if (k.startsWith('_')) continue;
-      if (p.x >= z.minx && p.x <= z.maxx && p.z >= z.minz && p.z <= z.maxz) return k;
-    }
-    return this.zone;
-  }
-
-  update(dt, player, level, saint, voice, audio, emitSound, fx) {
-    this.zone = this.zoneOf(player.pos, level.zones);
-    if (!this.woke && (this.zone === 'chapel' || this.zone === 'archive')) {
-      this.woke = true;
-      saint.wake();
-      this.hint = 'Something in the rock leaned toward you.';
-    }
-
-    this.near = this._nearest(player, level.interact);
-    this.inspectT = Math.max(0, this.inspectT - dt);
-
-    if (voice.flags.self && voice.mode === 'shout') {
-      saint.aware = 1;
-      saint.lastHeard.copy(player.pos);
-      if (saint.state !== 'dormant') saint._enter('hunt');
-      fx.stat = Math.max(fx.stat, 0.75);
-      this.hint = 'You said your name into a thing that collects names.';
-    }
-    if (voice.flags.bound && voice.mode !== 'shout') {
-      if (this.zone === 'chamber' && this.hasFork) {
-        this.binding = Math.min(1, this.binding + dt * 0.38);
-        saint.pin(1.2);
-        if (this.binding >= 1 && !this.end) this._win(saint, audio, fx);
-      } else if (saint.visible) {
-        saint.pin(4.2);
-        audio.pin();
-        this.hint = 'The name holds it — briefly. It hates being still.';
-      }
-    } else if (this.zone !== 'chamber') {
-      this.binding = Math.max(0, this.binding - dt * 0.4);
-    } else if (!voice.flags.bound) {
-      this.binding = Math.max(0, this.binding - dt * 0.15);
-    }
-
-    if (voice.flags.frag === 'orth' && !this.fragments.orth) { /* spoken fragment attracts */ }
-    if (voice.mode === 'shout') fx.stat = Math.max(fx.stat, 0.35);
-
-    if (saint.state === 'taking' && saint.stateT > 2.6 && !this.end) this._lose(fx);
-    if (this.end) this.endT += dt;
-
-    // inhale pull
-    if (saint.pull > 0.05 && saint.state !== 'bound') {
-      const dir = saint.root.position.clone().sub(player.pos);
-      dir.y = 0;
-      const d = dir.length() || 1;
-      const f = saint.pull * 6.5 * (1 / d);
-      player.vel.x += dir.x / d * f * dt * 18;
-      player.vel.z += dir.z / d * f * dt * 18;
-    }
-
-    if (this.zone === 'chapel' && !this.fragments.orth)
-      this.hint = this.hint || 'A mural at the far end still has a word in its mouth.';
-  }
-
-  use(player, audio, emitSound, saint) {
-    const it = this.near;
-    if (!it) return;
-    if (it.kind === 'door') {
-      const open = !it.door.open;
-      setDoorOpen(it.door, open);
-      it.door.t = open ? 1 : 0;
-      it.door.group.rotation.y = it.door.rotY + (open ? 1.25 : 0);
-      audio.door(it.pos.x, it.pos.y, it.pos.z);
-      emitSound(it.pos, 11, 'door');
-      return;
-    }
-    if (it.kind === 'bell') {
-      audio.bell(it.pos.x, it.pos.y, it.pos.z);
-      emitSound(it.pos, 32, 'bell');
-      this.inspect = { title: it.title, body: it.body };
-      this.inspectT = 5;
-      this.hint = 'The whole stack heard that.';
-      return;
-    }
-    if (it.kind === 'take') {
-      this.hasFork = true;
-      it.taken = true;
-      it.r = 0;
-      audio.pin();
-      this.inspect = { title: it.title, body: it.body };
-      this.inspectT = 6;
-      this.hint = 'The fork is warm. It wants the bound name whispered into the Mouth.';
-      return;
-    }
-    if (it.kind === 'bind') {
-      if (!this.fragments.orthael && !(this.fragments.orth && this.fragments.ael)) {
-        this.inspect = { title: it.title, body: 'You do not yet have both halves of the stilling.' };
-      } else if (!this.hasFork) {
-        this.inspect = { title: it.title, body: 'The Mouth will not close for a bare voice. The stilling fork is missing.' };
-      } else {
-        this.inspect = { title: it.title, body: 'Whisper ORTHAEL. One breath. Do not shout your name.' };
-      }
-      this.inspectT = 7;
-      audio.inspect();
-      return;
-    }
-    // inspect
-    audio.inspect();
-    if (it.sound === 'radio') audio.radioBurst(it.pos.x, it.pos.y, it.pos.z);
-    if (it.sound === 'vinyl') audio.vinyl(it.pos.x, it.pos.y, it.pos.z);
-    emitSound(it.pos, it.loud ? 20 : 2.2, 'inspect');
-    this.inspect = { title: it.title, body: it.body };
-    this.inspectT = 8;
-    if (it.fragment && !this.fragments[it.fragment]) {
-      this.fragments[it.fragment] = true;
-      const g = WORDS[it.fragment]?.glyph;
-      if (g && !this.known.includes(g)) this.known.push(g);
-      this.hint = 'A true sound, now yours: ' + (g || it.fragment);
-    }
-    if (this.fragments.orth && this.fragments.ael && !this.known.includes('ORTHAEL')) {
-      this.known.push('ORTHAEL');
-      this.fragments.orthael = true;
-    }
-    if (it.word === 'ORTHAEL') {
-      this.fragments.orthael = true;
-      if (!this.known.includes('ORTHAEL')) this.known.push('ORTHAEL');
-    }
-  }
-
-  _nearest(player, list) {
-    let best = null, bd = 2.2;
-    for (const it of list) {
-      if (it.taken) continue;
-      const d = player.pos.distanceTo(it.pos);
-      if (d < Math.max(it.r, 1.2) && d < bd) { bd = d; best = it; }
+      if (p.x < z.minx || p.x > z.maxx || p.z < z.minz || p.z > z.maxz) continue;
+      const dy = Math.abs((z.y || 0) - p.y);
+      if (dy < 1.6 && dy < bestY) { best = k; bestY = dy; }
     }
     return best;
   }
 
-  _win(saint, audio, fx) {
-    this.end = 'bind';
-    this.endT = 0;
-    saint.bind();
-    audio.bindChime();
-    fx.flash = 0.6;
-    this.hint = 'The mouths close. Somewhere past the still cloud, a hull is not breaking.';
-  }
-  _lose(fx) {
-    this.end = 'taken';
-    this.endT = 0;
-    fx.taken = 1;
+  update(dt, player, level, listener, voice, audio, emitSound, fx) {
+    this.zone = this.zoneOf(player.pos, level.zones);
+    if (!this.woke && (this.zone === 'parlor' || voice.mode !== 'silent' || player.moved > 2.4)) {
+      this.woke = true;
+      listener.wake();
+      this.hint = 'Something in the house turned its head.';
+    }
+
+    this.inspectT = Math.max(0, this.inspectT - dt);
+    if (this.inspectT <= 0) this.inspect = null;
+
+    this.near = null;
+    let best = 1.85;
+    for (const it of level.interact) {
+      const d = it.pos.distanceTo(player.pos);
+      if (d < Math.min(best, it.reach || 1.7)) { best = d; this.near = it; }
+    }
+
+    if (this.zone === 'parlor') this.hint = this.fragments.maren || (this.fragments.ma && this.fragments.ren)
+      ? (this.hasDamper ? 'The grate is waiting. Whisper MAREN.' : 'You still need the damper from the cellar.')
+      : 'The grate is the mouth. Find her name in the house.';
+    else if (this.zone === 'cellar') this.hint = this.hasDamper ? 'Take the damper upstairs to the parlor.' : 'The damper wheel is here. The iron is cold.';
+    else if (this.zone === 'kitchen') this.hint = this.fragments.ma ? 'The tap keeps time. Check the parlor and the nursery.' : 'Drawers. A letter. She wrote in small words.';
+    else if (this.zone === 'child') this.hint = this.fragments.ren ? 'You already wrote the last of her name.' : 'The drawing on the wall is yours.';
+    else if (this.zone === 'foyer' && !this.woke) this.hint = 'Clock. Coat. Stairs. You can move. The house is awake enough.';
+    else if (this.zone === 'master') this.hint = 'Her room still holds the shape of waiting.';
+
+    if (this.end) {
+      this.endT += dt;
+      if (this.end === 'taken') fx.taken = Math.min(1, this.endT / 1.6);
+      if (this.end === 'bind') { fx.pin = 0.8; fx.flash = 0.15; }
+      return;
+    }
+
+    const atGrate = player.pos.distanceTo(new THREE.Vector3(-7.1, 0.7, 2.6)) < 2.1 && this.zone === 'parlor';
+    const said = voice.flags.bound || (voice.flags.frag === 'maren');
+    const know = this.fragments.maren || (this.fragments.ma && this.fragments.ren);
+    if (atGrate && know && this.hasDamper && (said || (voice.mode === 'whisper' && this.known.includes('MAREN')))) {
+      this.bindT += dt;
+      listener.state = 'listen';
+      fx.pin = 0.6;
+      if (this.bindT > 1.6) {
+        this.end = 'bind';
+        this.endT = 0;
+        audio?.bindChime?.();
+      }
+    } else this.bindT = Math.max(0, this.bindT - dt);
+
+    if (voice.flags.self && voice.mode === 'shout') {
+      listener.state = 'hunt';
+      listener.huntT = 12;
+      listener.lastHeard.copy(player.pos);
+      this.hint = 'You said your name like you meant it. The house heard.';
+    }
+
+    if (listener.state === 'attack' && listener.attackT > 1.15) {
+      this.end = 'taken';
+      this.endT = 0;
+      audio?.taken?.();
+    }
   }
 
-  progress() {
-    let n = 0;
-    if (this.fragments.orth) n++;
-    if (this.fragments.ael) n++;
-    if (this.fragments.orthael || (this.fragments.orth && this.fragments.ael)) n++;
-    if (this.hasFork) n++;
-    return n; // 0-4
+  use(player, audio, emitSound, listener, level) {
+    const it = this.near;
+    if (!it) return;
+    audio?.inspect?.();
+    if (it.kind === 'door') {
+      const r = it.use(this, audio);
+      this.hint = r?.hint || this.hint;
+      emitSound(it.pos, 6, 'door');
+      return;
+    }
+    if (it.kind === 'light') {
+      const on = toggleLight(level, it.lightId);
+      this.inspect = { title: it.title, body: on ? 'Warm light holds the room.' : 'The dark comes back in.' };
+      this.inspectT = 2.2;
+      emitSound(it.pos, 2.5, 'click');
+      return;
+    }
+    if (it.kind === 'drawer' && it.mesh) {
+      it.mesh.position.x -= 0.12;
+      setTimeout(() => { if (it.mesh) it.mesh.position.x += 0.12; }, 900);
+    }
+    if (it.frag) this._learn(it.frag);
+    if (it.kind === 'key' && !this.hasDamper) {
+      this.hasDamper = true;
+      this.hint = 'Damper in hand. Take it to the parlor grate.';
+    }
+    this.inspect = { title: it.title, body: it.body || '' };
+    this.inspectT = 5.5;
+    if (it.kind === 'grate' && this.fragments.maren && this.hasDamper) {
+      this.hint = 'Whisper MAREN. Do not shout.';
+    }
+  }
+
+  _learn(frag) {
+    if (frag === 'ma') this.fragments.ma = true;
+    if (frag === 'ren') this.fragments.ren = true;
+    if (frag === 'maren') { this.fragments.maren = true; this.fragments.ma = true; this.fragments.ren = true; }
+    if (this.fragments.ma && this.fragments.ren) this.fragments.maren = true;
+    this.known = [];
+    if (this.fragments.ma) this.known.push('MA');
+    if (this.fragments.ren) this.known.push('REN');
+    if (this.fragments.maren) this.known.push('MAREN');
   }
 }

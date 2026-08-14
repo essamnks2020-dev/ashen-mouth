@@ -22,22 +22,27 @@ export class Player {
     this.moved = 0;
     this.fovBase = 68;
 
-    this.lantern = new THREE.PointLight(0xffc078, 1.35, 11, 1.6);
+    this.lantern = new THREE.SpotLight(0xffe2b8, 1.6, 14, 0.55, 0.45, 1.4);
     this.lantern.castShadow = false;
     camera.add(this.lantern);
-    this.lantern.position.set(0.22, -0.18, -0.25);
+    this.lantern.position.set(0.18, -0.12, 0.1);
+    this.lantern.target.position.set(0, -0.05, -1);
+    camera.add(this.lantern.target);
 
     this.hand = new THREE.Group();
     camera.add(this.hand);
-    this.hand.position.set(0.28, -0.32, -0.45);
+    this.hand.position.set(0.26, -0.28, -0.42);
   }
 
   attachLanternMesh(mats) {
-    const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.16, 6), mats.brass);
-    const flame = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), mats.glass);
-    flame.position.y = 0.08;
-    this.hand.add(cage); this.hand.add(flame);
-    this._flame = flame;
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.032, 0.14, 8), mats.iron);
+    body.rotation.x = 0.9;
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.03, 10), mats.glassWarm);
+    lens.position.set(0, 0.02, -0.08);
+    lens.rotation.x = -0.3;
+    this.hand.add(body);
+    this.hand.add(lens);
+    this._flame = lens;
   }
 
   update(dt, input, emitSound) {
@@ -71,9 +76,9 @@ export class Player {
     this.vel.z = damp(this.vel.z, wishZ * speed, accel, dt);
 
     if (input.pressed('Space') && this.grounded) {
-      this.vel.y = 5.4;
+      this.vel.y = 4.6;
       this.grounded = false;
-      emitSound(this.pos, 8, 'land');
+      emitSound(this.pos, 5, 'land');
     }
 
     if (input.pressed('KeyF')) this.lanternOn = !this.lanternOn;

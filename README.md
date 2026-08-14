@@ -1,9 +1,8 @@
 # ASHEN MOUTH
 
-A first-person listening-horror game in the browser. A coastal radio-monastery
-is built into a basalt stack. The monks bound a saint into the rock so storms
-would spare the boats. The saint still listens. It learned speech from prayers
-and distress calls. It now answers.
+A first-person listening-horror game in the browser. You return to **14 Ashen Lane**
+the night before the house is sold. Your mother burned your father’s recordings
+in the parlor grate. The house learned to listen. The grate is its mouth.
 
 Silence is stealth. Your microphone is the threat and the tool.
 
@@ -36,18 +35,19 @@ Nothing to install. `npm install` is not required — three.js is vendored.
 | `W A S D` | Move |
 | `SHIFT` | Slow walk (quieter) |
 | `CTRL` / `C` | Crouch |
-| `E` | Inspect / door / bell |
-| `F` | Lantern |
-| `T` | Known sounds |
+| `E` | Inspect / door / light / note |
+| `F` | Flashlight |
+| `T` | Known words |
 | `V` / `B` / `N` | Whisper / speak / shout (if mic is off) |
-| `1–9` | Whisper a known name (with T open) |
+| `1–9` | Whisper a known word (with T open) |
 | `ESC` | Pause |
 | Click | Lock mouse |
 
-Find three true sounds (mural, ledger, vinyl) and the stilling fork. Carry them
-to the Mouth. Whisper **ORTHAEL**. Do not shout your own name.
+Read the house. Find **MA** (kitchen), **REN** (nursery), **MAREN** (parlor photograph),
+and the **damper** in the cellar. Carry them to the parlor grate. Whisper **MAREN**.
+Do not shout your own name.
 
-The saint does not hunt by sight. Hiding in the dark does nothing. Making noise
+The Listener does not hunt by sight. Hiding in the dark does nothing. Making noise
 does everything.
 
 ---
@@ -61,10 +61,10 @@ vendor/three/           three.js r185
 src/
   main.js               boot, loop, screens
   core/                 input, audio, voice, post
-  world/                collision, shaders, monastery
-  game/                 player, saint, story, motes
-  ui/                   liturgical CSS
+  world/                collision, materials, house
+  game/                 player, listener, story, life
+  ui/                   house CSS
 ```
 
-MIT — see LICENSE. Bundles three.js (MIT). All rooms, the saint, and systems
+MIT — see LICENSE. Bundles three.js (MIT). All rooms, the Listener, and systems
 are original.

@@ -2,10 +2,10 @@ import { clamp01, lerp } from './util.js';
 
 const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-const NAME_SELF = /\b(essam|nasser|relief|operator)\b/;
-const NAME_BOUND = /\b(orthael|orth ael|or thael)\b/;
-const NAME_FRAG = /\b(orth|ael)\b/;
-const STILL = /\b(be still|still|spare the boats|spare)\b/;
+const NAME_SELF = /\b(essam|nasser|mom|mother|help|hello)\b/;
+const NAME_BOUND = /\b(maren|ma ren)\b/;
+const NAME_FRAG = /\b(maren|ma|ren)\b/;
+const STILL = /\b(hush|be quiet|quiet|close the flue|still)\b/;
 
 export class Voice {
   constructor() {

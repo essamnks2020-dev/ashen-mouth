@@ -5,18 +5,16 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
-import { clamp01 } from '../core/util.js';
 
 const GradeShader = {
   uniforms: {
     tDiffuse: { value: null },
     uTime: { value: 0 },
     uRes: { value: new THREE.Vector2(1, 1) },
-    uVignette: { value: 0.78 },
-    uGrain: { value: 0.028 },
-    uCA: { value: 0.0009 },
+    uVignette: { value: 0.42 },
+    uGrain: { value: 0.012 },
+    uCA: { value: 0.0007 },
     uListen: { value: 0 },
-    uStatic: { value: 0 },
     uHunt: { value: 0 },
     uTaken: { value: 0 },
     uPin: { value: 0 },
@@ -30,7 +28,7 @@ const GradeShader = {
     precision highp float;
     uniform sampler2D tDiffuse;
     uniform vec2 uRes;
-    uniform float uTime, uVignette, uGrain, uCA, uListen, uStatic, uHunt, uTaken, uPin, uFlash;
+    uniform float uTime, uVignette, uGrain, uCA, uListen, uHunt, uTaken, uPin, uFlash;
     varying vec2 vUv;
     float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
 
@@ -39,43 +37,30 @@ const GradeShader = {
       vec2 toC = uv - 0.5;
       float r = length(toC);
 
-      if (uListen > 0.01) {
-        float ring = abs(r - fract(uTime * 0.22 + uListen * 0.1) * 0.7);
-        uv += normalize(toC + 1e-5) * smoothstep(0.05, 0.0, ring) * 0.006 * uListen;
-      }
-
-      float ca = uCA + uHunt * 0.004 + uStatic * 0.01 + uTaken * 0.02;
-      vec2 off = toC * ca * 18.0;
+      float ca = uCA * (0.35 + r * 1.8) + uHunt * 0.0015;
+      vec2 off = toC * ca * 10.0;
       vec3 col;
       col.r = texture2D(tDiffuse, uv + off).r;
       col.g = texture2D(tDiffuse, uv).g;
       col.b = texture2D(tDiffuse, uv - off).b;
 
-      // Brass grade
-      col.r = pow(col.r, 0.92);
-      col.b = pow(col.b, 1.12);
-      col *= vec3(1.06, 0.98, 0.88);
+      col.r = pow(col.r, 0.96);
+      col.b = pow(col.b, 1.06);
+      col *= vec3(1.04, 0.99, 0.94);
 
-      float g = (hash(uv * uRes + uTime * 40.0) - 0.5) * uGrain;
+      float g = (hash(uv * uRes * 0.35 + uTime * 8.0) - 0.5) * uGrain;
       col += g;
 
-      float vig = smoothstep(0.2, 1.15, r);
+      float vig = smoothstep(0.45, 1.25, r);
       col *= 1.0 - vig * uVignette;
 
-      col = mix(col, vec3(0.72, 0.52, 0.22), uHunt * 0.12);
-      col = mix(col, vec3(dot(col, vec3(0.3,0.5,0.2))), uPin * 0.55);
+      col = mix(col, col * vec3(1.08, 0.92, 0.82), uHunt * 0.18);
+      col = mix(col, vec3(dot(col, vec3(0.3,0.5,0.2))), uPin * 0.35);
+      col = mix(col, vec3(0.04, 0.02, 0.015), uTaken * smoothstep(0.1, 0.7, r));
+      col += vec3(1.0, 0.93, 0.8) * uFlash;
 
-      if (uStatic > 0.01) {
-        float s = hash(vec2(uv.y * 240.0, uTime * 18.0));
-        col = mix(col, vec3(s * 0.7, s * 0.48, s * 0.18), uStatic);
-        col += vec3(0.4, 0.25, 0.08) * step(0.97, hash(uv * 80.0 + uTime));
-      }
-      if (uTaken > 0.01) {
-        float m = smoothstep(0.15, 0.55, r);
-        col = mix(col, vec3(0.04, 0.02, 0.01), m * uTaken);
-        col += vec3(0.35, 0.12, 0.04) * (1.0 - m) * uTaken * 0.4;
-      }
-      col += vec3(1.0, 0.92, 0.75) * uFlash;
+      float listenRing = abs(r - fract(uTime * 0.12) * 0.65);
+      col += vec3(0.12, 0.07, 0.04) * smoothstep(0.04, 0.0, listenRing) * uListen * 0.35;
 
       gl_FragColor = vec4(col, 1.0);
     }
@@ -89,11 +74,11 @@ export class PostFX {
     this.camera = camera;
     this.quality = 'high';
     this.listen = 0;
-    this.stat = 0;
     this.hunt = 0;
     this.taken = 0;
     this.pin = 0;
     this.flash = 0;
+    this.stat = 0;
     this._build('high');
   }
 
@@ -107,10 +92,10 @@ export class PostFX {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
 
     if (q === 'high') {
-      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.38, 0.55, 0.72);
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.22, 0.5, 0.82);
       this.composer.addPass(this.bloom);
     } else if (q === 'medium') {
-      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.22, 0.4, 0.8);
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(s.x, s.y), 0.12, 0.4, 0.88);
       this.composer.addPass(this.bloom);
     } else {
       this.bloom = null;
@@ -147,14 +132,12 @@ export class PostFX {
   update(dt, cam) {
     this.grade.uniforms.uTime.value += dt;
     this.grade.uniforms.uListen.value = this.listen;
-    this.grade.uniforms.uStatic.value = this.stat;
     this.grade.uniforms.uHunt.value = this.hunt;
     this.grade.uniforms.uTaken.value = this.taken;
     this.grade.uniforms.uPin.value = this.pin;
     this.grade.uniforms.uFlash.value = this.flash;
     this.listen = THREE.MathUtils.damp(this.listen, 0, 1.2, dt);
-    this.stat = THREE.MathUtils.damp(this.stat, 0, 1.6, dt);
-    this.hunt = THREE.MathUtils.damp(this.hunt, 0, 0.8, dt);
+    this.hunt = THREE.MathUtils.damp(this.hunt, 0, 0.9, dt);
     this.pin = THREE.MathUtils.damp(this.pin, 0, 1.4, dt);
     this.flash = THREE.MathUtils.damp(this.flash, 0, 6, dt);
     this.camera = cam;

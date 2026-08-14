@@ -5,12 +5,12 @@ import { Voice } from './core/voice.js';
 import { PostFX, pixelRatioFor } from './core/fx.js';
 import { loadSettings, saveSettings, clamp01, damp } from './core/util.js';
 import { World } from './world/world.js';
-import { makeSky, makeSea, makeMaterials, FogColor } from './world/shaders.js';
-import { buildLevel, setDoorOpen } from './world/level.js';
+import { makeMaterials, makeSky, NIGHT } from './world/materials.js';
+import { buildHouse } from './world/house.js';
 import { Player } from './game/player.js';
-import { Saint } from './game/saint.js';
+import { Listener } from './game/creature.js';
 import { Story } from './game/story.js';
-import { Motes, Vortex } from './game/particles.js';
+import { Life } from './game/life.js';
 
 const $ = (id) => document.getElementById(id);
 const screens = ['boot', 'title', 'intro', 'pause', 'settings', 'win', 'lose'];
@@ -26,12 +26,11 @@ class Game {
     this.voiceEmit = 0;
     this.phrasesOn = false;
     this.selectedWord = 0;
-    this.acc = 0;
   }
 
   setScreen(id) {
     for (const s of screens) $(s).classList.toggle('active', s === id);
-    $('hud').classList.toggle('active', id === 'play' || this.mode === 'play' && id === 'intro');
+    $('hud').classList.toggle('active', id === 'play');
     if (id === 'intro') $('hud').classList.remove('active');
   }
 
@@ -40,71 +39,47 @@ class Game {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.12;
     this.renderer.shadowMap.enabled = this.settings.quality === 'high';
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.setClearColor(NIGHT, 1);
     this._resize();
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(FogColor, 0.011);
-    this.scene.background = new THREE.Color(FogColor);
+    this.scene.fog = new THREE.FogExp2(0x121820, 0.018);
+    this.scene.background = new THREE.Color(0x0a1018);
 
-    this.camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 420);
+    this.camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 220);
 
     this.sky = makeSky();
     this.scene.add(this.sky);
-    this.sea = makeSea();
-    this.scene.add(this.sea);
 
-    const hemi = new THREE.HemisphereLight(0x7a6450, 0x0a0806, 0.72);
-    this.scene.add(hemi);
-    this.sun = new THREE.DirectionalLight(0xc9a56a, 0.85);
-    this.sun.position.set(18, 22, 30);
-    this.sun.castShadow = this.settings.quality === 'high';
-    if (this.sun.castShadow) {
-      this.sun.shadow.mapSize.set(1024, 1024);
-      this.sun.shadow.camera.near = 2;
-      this.sun.shadow.camera.far = 80;
-      this.sun.shadow.camera.left = this.sun.shadow.camera.bottom = -30;
-      this.sun.shadow.camera.right = this.sun.shadow.camera.top = 30;
-    }
-    this.scene.add(this.sun);
-
-    this.chapelLight = new THREE.PointLight(0xffb45a, 0.55, 14, 1.8);
-    this.chapelLight.position.set(0, 9.4, 7);
-    this.scene.add(this.chapelLight);
-
-    this.dockLight = new THREE.PointLight(0xffc078, 0.7, 10, 1.7);
-    this.dockLight.position.set(0, 3.2, 36);
-    this.scene.add(this.dockLight);
-
-    $('boot-fill').style.width = '35%';
-    $('boot-status').textContent = 'binding brass…';
+    $('boot-fill').style.width = '30%';
+    $('boot-status').textContent = 'laying floors…';
     await tick();
 
-    this.mats = makeMaterials();
+    this.mats = makeMaterials(this.settings.quality);
     this.world = new World();
-    this.level = buildLevel(this.scene, this.world, this.mats, this.settings.quality);
+    this.level = buildHouse(this.scene, this.world, this.mats, this.settings.quality);
     for (const it of this.level.interact) {
-      if (it.startOpen && it.door) {
-        setDoorOpen(it.door, true);
-        it.door.group.rotation.y = it.door.rotY + 1.25;
+      if (it.door && !it.door.want) {
+        /* closed */
       }
     }
 
-    $('boot-fill').style.width = '70%';
-    $('boot-status').textContent = 'the saint leans in…';
+    $('boot-fill').style.width = '65%';
+    $('boot-status').textContent = 'the grate still glows…';
     await tick();
 
     this.player = new Player(this.camera, this.world);
     this.player.pos.copy(this.level.spawn);
+    this.player.yaw = this.level.spawnYaw;
     this.player.attachLanternMesh(this.mats);
     this.scene.add(this.camera);
 
-    this.saint = new Saint(this.scene, this.mats, this.world, this.level.patrol);
+    this.listener = new Listener(this.scene, this.mats, this.world, this.level.patrol);
     this.story = new Story();
-    this.motes = this.settings.quality === 'low' ? null : new Motes(this.scene, this.settings.quality === 'high' ? 90 : 40);
-    this.vortex = new Vortex(this.scene);
+    this.life = new Life(this.scene, this.settings.quality);
 
     this.fx = new PostFX(this.renderer, this.scene, this.camera);
     this.fx.setQuality(this.settings.quality);
@@ -121,7 +96,7 @@ class Game {
     this._syncSettings();
 
     $('boot-fill').style.width = '100%';
-    $('boot-status').textContent = 'coil open';
+    $('boot-status').textContent = 'the house is waiting';
     await wait(280);
     this.mode = 'title';
     this.setScreen('title');
@@ -179,7 +154,6 @@ class Game {
     const q = this.settings.quality;
     this.renderer.setPixelRatio(pixelRatioFor(q));
     this.renderer.shadowMap.enabled = q === 'high';
-    this.sun.castShadow = q === 'high';
     this.fx.setQuality(q);
     this._resize();
   }
@@ -221,8 +195,8 @@ class Game {
     this.setScreen('play');
     $('hud').classList.add('active');
     this.player.pos.copy(this.level.spawn);
-    this.player.yaw = Math.PI;
-    this.player.pitch = -0.08;
+    this.player.yaw = this.level.spawnYaw;
+    this.player.pitch = -0.04;
     this.input.requestLock();
   }
 
@@ -237,7 +211,8 @@ class Game {
     const p = pos.clone ? pos.clone() : new THREE.Vector3(pos.x, pos.y, pos.z);
     this.sounds.push({ pos: p, power, kind, t: 0 });
     this.lastSound.copy(p);
-    this.saint.hear(p, power, kind, this.voice.lastPhrase);
+    this.listener.hear(p, power, kind, this.voice.lastPhrase);
+    if (kind === 'step') this.audio.foot?.(p.x, p.y, p.z, 'wood', power < 3);
   }
 
   loop = () => {
@@ -248,18 +223,23 @@ class Game {
 
   _frame(dt) {
     const t = performance.now() * 0.001;
-    this.sky.material.uniforms.uTime.value = t;
-    this.sea.material.uniforms.uTime.value = t;
-    this.sea.material.uniforms.uCam.value.copy(this.camera.position);
+    if (this.sky.material.uniforms) this.sky.material.uniforms.uTime.value = t;
+    if (this.mats.curtainMat.userData.shader) this.mats.curtainMat.userData.shader.uniforms.uTime.value = t;
+
+    for (const L of this.level.lights) {
+      const on = L.on !== false;
+      const flick = L.flicker ? Math.sin(t * (4 + (L.id || '').length)) * L.flicker * 0.5 + Math.sin(t * 11.3) * L.flicker * 0.25 : 0;
+      L.light.intensity = on ? L.base + flick : 0.02;
+    }
+    for (const liv of this.level.living) liv.update(dt, t, this.player);
 
     if (this.mode === 'title' || this.mode === 'settings' || this.mode === 'boot') {
-      this.camera.position.set(-8 + Math.sin(t * 0.07) * 2, 7.5, 32);
-      this.camera.lookAt(0, 8, 8);
+      this.camera.position.set(-1.2 + Math.sin(t * 0.08) * 0.4, 1.55, 11.2);
+      this.camera.lookAt(0, 1.8, 6.2);
       if (this.player) {
         this.player.lantern.visible = false;
         this.player.hand.visible = false;
       }
-      if (this.motes) this.motes.pts.visible = false;
       this.fx.update(dt, this.camera);
       this.fx.render();
       this.input.endFrame();
@@ -268,13 +248,11 @@ class Game {
 
     if (this.mode === 'intro') {
       if (this.player) { this.player.lantern.visible = false; this.player.hand.visible = false; }
-      if (this.motes) this.motes.pts.visible = false;
       const card = this.story.intro(dt, this.camera);
       $('intro-card').textContent = card.card || '';
-      $('intro-radio').textContent = card.radio || '';
+      $('intro-radio').textContent = card.line || '';
       if (this.input.pressed('Space') || this.input.pressed('Escape') || this.input.pressed('Enter')) this._skipIntro();
       if (this.story.introDone) this._enterPlay();
-      if (this.story.introT > 13 && this.story.introT < 14.2) this.audio.radioBurst?.(0, 4, 33);
       this.fx.update(dt, this.camera);
       this.fx.render();
       this.input.endFrame();
@@ -303,8 +281,10 @@ class Game {
       this.input.endFrame();
       return;
     }
-    if (this.player) { this.player.lantern.visible = this.player.lanternOn; this.player.hand.visible = true; }
-    if (this.motes) this.motes.pts.visible = true;
+    if (this.player) {
+      this.player.lantern.visible = this.player.lanternOn;
+      this.player.hand.visible = true;
+    }
     if (!this.input.locked && !this.input.mobile && this.input.clicked) this.input.requestLock();
 
     if (this.input.pressed('KeyT')) this.phrasesOn = !this.phrasesOn;
@@ -326,36 +306,28 @@ class Game {
     this.voice.update(dt);
     this.voiceEmit -= dt;
     if (this.voice.soundPower() > 0 && this.voiceEmit <= 0) {
-      this.emitSound(this.player.pos, this.voice.soundPower(), 'voice');
+      const kind = this.voice.mode === 'shout' ? 'shout' : 'voice';
+      this.emitSound(this.player.pos, this.voice.soundPower(), kind);
       this.voiceEmit = this.voice.mode === 'whisper' ? 0.45 : 0.22;
       if (this.voice.mode !== 'whisper') this.audio.speakPuff(this.voice.mode === 'shout');
     }
 
     const emit = (pos, power, kind) => this.emitSound(pos, power, kind);
     this.player.update(dt, this.input, emit);
-    if (this.player.grounded && this.player.moved > 0.4) {
-      /* footsteps already emit inside player */
-    }
 
-    if (this.input.pressed('KeyE')) this.story.use(this.player, this.audio, emit, this.saint);
+    if (this.input.pressed('KeyE')) this.story.use(this.player, this.audio, emit, this.listener, this.level);
 
-    this.story.update(dt, this.player, this.level, this.saint, this.voice, this.audio, emit, this.fx);
-    this.saint.update(dt, this.player, this.audio, this.fx, emit);
+    this.story.update(dt, this.player, this.level, this.listener, this.voice, this.audio, emit, this.fx);
+    this.listener.update(dt, this.player, this.audio, this.fx, emit);
+    this.life.update(dt, t, this.player, this.story.zone);
 
-    const dSaint = this.saint.root.position.distanceTo(this.player.pos);
+    const dL = this.listener.root.position.distanceTo(this.player.pos);
     this.audio.setListener(this.player.pos.x, this.player.pos.y + 1.4, this.player.pos.z,
       -Math.sin(this.player.yaw), -Math.cos(this.player.yaw));
-    this.audio.setTension(clamp01(this.saint.aware * 0.5 + (this.saint.state === 'hunt' ? 0.5 : 0) + (dSaint < 10 ? (10 - dSaint) / 20 : 0)));
-    if (dSaint < 9 && this.saint.visible) this.audio.heartbeat(dSaint < 4);
+    this.audio.setTension(clamp01(this.listener.aware * 0.5 + (this.listener.state === 'hunt' ? 0.5 : 0) + (dL < 10 ? (10 - dL) / 20 : 0)));
+    if (dL < 8 && this.listener.woke) this.audio.heartbeat(dL < 3.5);
 
-    this.chapelLight.intensity = 0.45 + Math.sin(t * 2.1) * 0.08;
-    this.mats.candle.emissiveIntensity = 1.8 + Math.sin(t * 7.5) * 0.5 + Math.sin(t * 13.0) * 0.2;
-    this.mats.glass.emissiveIntensity = 1.2 + Math.sin(t * 3.2) * 0.25;
-
-    if (this.motes) this.motes.update(dt, this.voice.mode !== 'silent' ? this.player.pos : this.lastSound);
-    this.vortex.update(dt, this.saint);
-
-    this.camera.fov = damp(this.camera.fov, this.saint.pull > 0.2 ? 78 : 68, 4, dt);
+    this.camera.fov = damp(this.camera.fov, this.listener.state === 'attack' ? 74 : 68, 4, dt);
     this.camera.updateProjectionMatrix();
 
     if (this.story.end === 'bind' && this.story.endT > 3.2) {
@@ -379,12 +351,12 @@ class Game {
 
   _hud() {
     const bits = [
-      this.story.fragments.orth ? 'ORTH' : '—',
-      this.story.fragments.ael ? 'AEL' : '—',
-      this.story.fragments.orthael || (this.story.fragments.orth && this.story.fragments.ael) ? 'ORTHAEL' : '—',
+      this.story.fragments.ma ? 'MA' : '—',
+      this.story.fragments.ren ? 'REN' : '—',
+      this.story.fragments.maren ? 'MAREN' : '—',
     ];
     $('hud-frag').textContent = bits.join('   ');
-    $('hud-fork').textContent = this.story.hasFork ? 'STILLING FORK' : '';
+    $('hud-fork').textContent = this.story.hasDamper ? 'DAMPER' : '';
     $('hint').textContent = this.story.hint;
     const n = this.story.near;
     const prompt = $('prompt');
@@ -402,7 +374,7 @@ class Game {
 
     const noise = Math.max(this.voice.volume, this.player.moved / 6);
     $('meter-fill').style.width = (clamp01(noise) * 100) + '%';
-    $('listen-pill').classList.toggle('on', this.saint.state === 'listen' || this.saint.state === 'inhale');
+    $('listen-pill').classList.toggle('on', this.listener.state === 'listen' || this.listener.state === 'attack');
     const mic = $('mic-pill');
     mic.textContent = this.voice.micDenied || this.voice.fallback ? 'VOICE KEYS  V B N' : this.voice.listening ? 'MIC LIVE' : 'MIC';
     mic.classList.toggle('live', this.voice.listening && !this.voice.fallback);
@@ -411,7 +383,7 @@ class Game {
     const list = $('phrase-list');
     list.innerHTML = this.story.known.length
       ? this.story.known.map((w, i) => `<div class="ph-item"><em>${i + 1}</em>${w}</div>`).join('')
-      : '<div class="ph-item">nothing yet — inspect the stack</div>';
+      : '<div class="ph-item">nothing yet — read the house</div>';
   }
 
   _resize() {
@@ -431,9 +403,9 @@ const game = new Game();
 game.boot().catch((err) => {
   console.error(err);
   const s = $('boot-status');
-  if (s) s.textContent = 'the coil failed — ' + (err && err.message ? err.message : err);
+  if (s) s.textContent = 'the house failed — ' + (err && err.message ? err.message : err);
 });
 addEventListener('error', (e) => {
   const s = $('boot-status');
-  if (s && $('boot')?.classList.contains('active')) s.textContent = 'the coil failed — ' + e.message;
+  if (s && $('boot')?.classList.contains('active')) s.textContent = 'the house failed — ' + e.message;
 });
