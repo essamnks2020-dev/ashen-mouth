@@ -198,7 +198,7 @@ export function makeMaterials(quality) {
   const plaster = std(plasterMap, { roughness: 0.9, color: 0xf2eadc });
   const wallpaper = std(paperMap, { roughness: 0.88 });
   const wallpaperWarm = std(paperWarm, { roughness: 0.9 });
-  const brick = std(brickMap, { roughness: 0.95 });
+  const brick = std(brickMap, { roughness: 0.95, color: 0xf2d4c4 });
   const fabric = std(fabricMap, { roughness: 0.9, side: THREE.DoubleSide });
   const carpet = std(carpetMap, { roughness: 0.98 });
   const iron = std(rustMap, { roughness: 0.45, metalness: 0.72, color: 0x9a8a7a });
@@ -216,12 +216,15 @@ export function makeMaterials(quality) {
     side: THREE.DoubleSide,
   });
   const glassWarm = new THREE.MeshStandardMaterial({
-    color: 0xffd9a0,
+    color: 0xffe2b0,
     emissive: 0xffc078,
-    emissiveIntensity: 0.55,
-    roughness: 0.3,
+    emissiveIntensity: 1.35,
+    roughness: 0.28,
     transparent: true,
-    opacity: 0.85,
+    opacity: 0.92,
+  });
+  const windowGlow = new THREE.MeshBasicMaterial({
+    color: 0xffe4b0, transparent: true, opacity: 1, depthWrite: false, side: THREE.DoubleSide, toneMapped: false,
   });
 
   const ember = new THREE.MeshStandardMaterial({
@@ -235,6 +238,90 @@ export function makeMaterials(quality) {
   const lampShade = new THREE.MeshStandardMaterial({
     color: 0xf8e2c0, emissive: 0xffc070, emissiveIntensity: 1.15, roughness: 0.65, side: THREE.DoubleSide,
   });
+  const grassMap = canvas(256, (g, s) => {
+    g.fillStyle = '#1a2414';
+    g.fillRect(0, 0, s, s);
+    for (let i = 0; i < 900; i++) {
+      const n = Math.random();
+      g.fillStyle = n > 0.55 ? '#2c3a1c' : n > 0.25 ? '#243218' : '#1e2c14';
+      g.fillRect(Math.random() * s, Math.random() * s, 2 + Math.random() * 3, 1);
+    }
+    noise(g, s, 14, [0.5, 1, 0.4]);
+  });
+  grassMap.repeat.set(18, 16);
+
+  const shingleMap = canvas(256, (g, s) => {
+    g.fillStyle = '#1a1210';
+    g.fillRect(0, 0, s, s);
+    const bh = 14, bw = 28;
+    for (let y = 0, row = 0; y < s; y += bh, row++) {
+      const off = (row % 2) * (bw / 2);
+      for (let x = -bw; x < s; x += bw) {
+        const r = 48 + Math.random() * 22;
+        g.fillStyle = `rgb(${r},${r * 0.55},${r * 0.42})`;
+        g.fillRect(x + off + 1, y + 1, bw - 2, bh - 2);
+      }
+    }
+  });
+  shingleMap.repeat.set(8, 6);
+
+  const leafMap = canvas(128, (g, s) => {
+    g.fillStyle = '#152010';
+    g.fillRect(0, 0, s, s);
+    for (let i = 0; i < 80; i++) {
+      g.fillStyle = `rgba(${30 + Math.random() * 40},${50 + Math.random() * 40},20,0.5)`;
+      g.beginPath();
+      g.ellipse(Math.random() * s, Math.random() * s, 6, 3, Math.random() * 3, 0, 6.3);
+      g.fill();
+    }
+  });
+
+  const barkMap = canvas(128, (g, s) => {
+    g.fillStyle = '#2a1c14';
+    g.fillRect(0, 0, s, s);
+    for (let x = 0; x < s; x += 7) {
+      g.strokeStyle = `rgba(20,12,8,${0.3 + Math.random() * 0.4})`;
+      g.beginPath();
+      g.moveTo(x, 0);
+      g.lineTo(x + Math.sin(x) * 2, s);
+      g.stroke();
+    }
+  });
+
+  const runnerMap = canvas(128, (g, s) => {
+    g.fillStyle = '#4a2420';
+    g.fillRect(0, 0, s, s);
+    g.fillStyle = '#6a3830';
+    g.fillRect(10, 0, 4, s);
+    g.fillRect(s - 14, 0, 4, s);
+    for (let y = 8; y < s; y += 16) {
+      g.fillStyle = '#3a1c18';
+      g.fillRect(18, y, s - 36, 6);
+    }
+  });
+  runnerMap.repeat.set(1, 4);
+
+  const portMap = canvas(128, (g, s) => {
+    g.fillStyle = '#3a2a22';
+    g.fillRect(0, 0, s, s);
+    g.fillStyle = '#5a4034';
+    g.fillRect(24, 40, 80, 70);
+    g.fillStyle = '#c4a888';
+    g.beginPath();
+    g.arc(64, 48, 18, 0, 6.3);
+    g.fill();
+    g.fillStyle = '#2a1814';
+    g.fillRect(40, 66, 48, 50);
+    noise(g, s, 12, [1, 0.8, 0.6]);
+  });
+
+  const grass = std(grassMap, { roughness: 0.95, color: 0xb8d080 });
+  const shingle = std(shingleMap, { roughness: 0.92, color: 0xc4a090 });
+  const leaf = std(leafMap, { roughness: 0.9, color: 0x6a8a48 });
+  const bark = std(barkMap, { roughness: 0.92, color: 0x8a6a50 });
+  const runner = std(runnerMap, { roughness: 0.96 });
+  const portrait = std(portMap, { roughness: 0.85 });
+
   const white = new THREE.MeshStandardMaterial({ color: 0xe6ddd0, roughness: 0.7 });
   const black = new THREE.MeshStandardMaterial({ color: 0x0a0908, roughness: 0.9 });
 
@@ -256,6 +343,7 @@ export function makeMaterials(quality) {
   return {
     wood, woodDark, floor, plaster, wallpaper, wallpaperWarm, brick, fabric, carpet,
     iron, brass, porcelain, glass, glassWarm, ember, soot, linen, coat, lampShade, white, black, curtainMat,
+    grass, shingle, leaf, bark, runner, portrait, windowGlow,
     maps: { woodMap, floorMap, plasterMap },
   };
 }

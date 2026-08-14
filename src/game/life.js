@@ -21,7 +21,7 @@ export class Life {
         });
       }
     }
-    this.lamp = new THREE.Vector3(-3.15, 1.2, 4.6);
+    this.lamp = new THREE.Vector3(-3.05, 1.18, 4.38);
 
     const dustN = quality === 'low' ? 0 : quality === 'high' ? 48 : 24;
     this.dust = null;

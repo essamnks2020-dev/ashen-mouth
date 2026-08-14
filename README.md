@@ -61,7 +61,7 @@ vendor/three/           three.js r185
 src/
   main.js               boot, loop, screens
   core/                 input, audio, voice, post
-  world/                collision, materials, house
+  world/                collision, materials, house plan / kit / rooms / exterior
   game/                 player, listener, story, life
   ui/                   house CSS
 ```

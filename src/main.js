@@ -46,7 +46,7 @@ class Game {
     this._resize();
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x1a2430, 0.0075);
+    this.scene.fog = new THREE.FogExp2(0x1a2430, 0.0065);
     this.scene.background = new THREE.Color(0x0c141c);
 
     this.camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 220);
@@ -80,6 +80,7 @@ class Game {
     this.listener = new Listener(this.scene, this.mats, this.world, this.level.patrol);
     this.story = new Story();
     this.life = new Life(this.scene, this.settings.quality);
+    if (this.level.lampPos) this.life.lamp.copy(this.level.lampPos);
 
     this.fx = new PostFX(this.renderer, this.scene, this.camera);
     this.fx.setQuality(this.settings.quality);
@@ -101,6 +102,45 @@ class Game {
     this.mode = 'title';
     this.setScreen('title');
     requestAnimationFrame(() => this.loop());
+    const qa = new URLSearchParams(location.search).get('qa');
+    if (qa) this._qa(qa);
+  }
+
+  _qa(shot) {
+    this.audio.init();
+    this.audio.setMute(true);
+    this._skipIntro();
+    $('hud').classList.remove('active');
+    const p = this.player;
+    p.lanternOn = false;
+    p.lantern.intensity = 0;
+    p.fill.intensity = 0.12;
+    if (shot === 'porch') {
+      p.pos.set(0.05, 0.02, 7.15); p.yaw = 0; p.pitch = -0.12;
+      if (this.level.frontDoor) this.level.frontDoor.want = 1;
+    }
+    else if (shot === 'outside') { p.pos.set(0.2, 0.02, 10.8); p.yaw = 0; p.pitch = 0.06; }
+    else if (shot === 'foyer') { p.pos.set(-0.42, 0.02, 4.22); p.yaw = 0; p.pitch = -0.04; }
+    else if (shot === 'stair') { p.pos.set(0.94, 0.02, 4.52); p.yaw = 0; p.pitch = 0.42; }
+    else if (shot === 'stairwalk') {
+      p.pos.set(0.94, 0.06, 4.40);
+      p.yaw = 0;
+      p.vel.set(0, 0, 0);
+      for (let i = 0; i < 220; i++) {
+        p.vel.x = 0;
+        p.vel.z = -2.15;
+        this.world.moveCapsule(p.pos, p.vel, p.radius, p.height, 1 / 60);
+      }
+      p.pitch = 0.12;
+      document.title = `stair y=${p.pos.y.toFixed(2)} z=${p.pos.z.toFixed(2)} ramp=${this.world.onRamp ? 1 : 0}`;
+    }
+    else if (shot === 'up') { p.pos.set(-0.35, 2.82, 0.9); p.yaw = Math.PI; p.pitch = 0.15; }
+    else if (shot === 'parlor') { p.pos.set(-2.4, 0.02, 2.75); p.yaw = Math.PI * 0.5; p.pitch = 0.05; }
+    else if (shot === 'kitchen') { p.pos.set(3.2, 0.02, 3.2); p.yaw = -1.2; p.pitch = 0.08; }
+    this.player.cam.position.set(p.pos.x, p.pos.y + p.eye, p.pos.z);
+    this.player.cam.rotation.order = 'YXZ';
+    this.player.cam.rotation.y = p.yaw;
+    this.player.cam.rotation.x = p.pitch;
   }
 
   _bindUI() {
@@ -234,8 +274,8 @@ class Game {
     for (const liv of this.level.living) liv.update(dt, t, this.player);
 
     if (this.mode === 'title' || this.mode === 'settings' || this.mode === 'boot') {
-      this.camera.position.set(-1.2 + Math.sin(t * 0.08) * 0.4, 1.55, 11.2);
-      this.camera.lookAt(0, 1.8, 6.2);
+      this.camera.position.set(0.35 + Math.sin(t * 0.06) * 0.25, 1.62, 12.6);
+      this.camera.lookAt(0.05, 2.15, 5.15);
       if (this.player) {
         this.player.lantern.visible = false;
         this.player.hand.visible = false;
@@ -249,6 +289,7 @@ class Game {
     if (this.mode === 'intro') {
       if (this.player) { this.player.lantern.visible = false; this.player.hand.visible = false; }
       const card = this.story.intro(dt, this.camera);
+      if (this.level.frontDoor) this.level.frontDoor.want = this.story.introT > 13.2 ? 1 : 0;
       $('intro-card').textContent = card.card || '';
       $('intro-radio').textContent = card.line || '';
       if (this.input.pressed('Space') || this.input.pressed('Escape') || this.input.pressed('Enter')) this._skipIntro();

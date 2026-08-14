@@ -1,17 +1,17 @@
 import * as THREE from 'three';
 import { lerp, clamp01, damp } from '../core/util.js';
 import { toggleLight } from '../world/house.js';
+import { GRATE, SPAWN, MAIN_STAIR } from '../world/plan.js';
 
 const INTRO = [
-  { t: 0.0, pos: [0.15, 1.55, 12.6], look: [0.2, 1.8, 6.4], card: '14 ASHEN LANE', line: 'The Holloway house. Tomorrow the sign goes up.' },
-  { t: 5.0, pos: [0.1, 1.58, 7.4], look: [0, 1.5, 3.8], card: '', line: 'You have the key. Mother said: go in, close the flue, do not stay after dark.' },
-  { t: 10.5, pos: [0.05, 1.58, 4.7], look: [-1.5, 1.5, 4.8], card: '', line: 'This is the house you grew up in. The clock still keeps her time.' },
-  { t: 15.5, pos: [-4.2, 1.5, 3.5], look: [-7.5, 0.85, 2.6], card: '', line: 'After Father died she burned every tape he recorded. She fed them to the grate.' },
-  { t: 21.0, pos: [-6.4, 1.15, 2.65], look: [-7.6, 0.7, 2.6], card: '', line: 'The fireplace learned to listen. It is the house’s mouth.' },
-  { t: 26.0, pos: [4.8, 1.52, 3.5], look: [7.05, 1.1, 4.4], card: '', line: 'The tap still drips. Drawers still open. She asked you not to shout.' },
-  { t: 31.0, pos: [0.35, 1.7, 4.2], look: [1.15, 2.4, 2.4], card: 'ASHEN MOUTH', line: 'Find her name. Take the damper from the cellar. Whisper it at the grate.' },
-  { t: 36.5, pos: [0.0, 1.58, 4.55], look: [0, 1.45, 1.3], card: '', line: 'Whisper if you must. Never shout.' },
-  { t: 40.0, pos: [0.0, 1.58, 4.55], look: [0, 1.45, 1.3], card: '', line: '' },
+  { t: 0.0, pos: [7.4, 2.15, 16.8], look: [0.1, 3.4, 2.2], card: '14 ASHEN LANE', line: 'The Holloway house. Tomorrow the sign goes up.' },
+  { t: 5.5, pos: [1.4, 1.62, 12.4], look: [0.05, 2.1, 5.4], card: '', line: 'You have the key. Mother said: go in, close the flue, do not stay after dark.' },
+  { t: 11.0, pos: [0.05, 1.55, 7.35], look: [0, 1.45, 5.15], card: '', line: 'The door still knows your hand.' },
+  { t: 15.5, pos: [-0.35, 1.56, 4.35], look: [-1.2, 1.4, 4.6], card: '', line: 'This is the house you grew up in. The clock still keeps her time.' },
+  { t: 20.5, pos: [-3.4, 1.48, 2.85], look: [GRATE.x + 0.4, 0.75, GRATE.z], card: '', line: 'After Father died she burned every tape he recorded. She fed them to the grate.' },
+  { t: 26.0, pos: [-0.4, 1.62, 3.9], look: [MAIN_STAIR.x, 1.8, MAIN_STAIR.zBot - 0.8], card: 'ASHEN MOUTH', line: 'Find her name. Take the damper from the cellar. Whisper it at the grate.' },
+  { t: 31.0, pos: [SPAWN.x, 1.58, SPAWN.z], look: [SPAWN.x, 1.4, SPAWN.z - 2.4], card: '', line: 'Whisper if you must. Never shout.' },
+  { t: 34.5, pos: [SPAWN.x, 1.58, SPAWN.z], look: [SPAWN.x, 1.4, SPAWN.z - 2.4], card: '', line: '' },
 ];
 
 export class Story {
@@ -32,12 +32,12 @@ export class Story {
     this.bindT = 0;
   }
 
-  skipIntro() { this.introT = 40.5; this.introDone = true; }
+  skipIntro() { this.introT = 35; this.introDone = true; }
 
   intro(dt, cam) {
     this.introT += dt;
     const t = this.introT;
-    if (t >= 39.8) { this.introDone = true; return { card: '', line: '' }; }
+    if (t >= 34.2) { this.introDone = true; return { card: '', line: '' }; }
     let a = INTRO[0], b = INTRO[INTRO.length - 1];
     for (let i = 0; i < INTRO.length - 1; i++) {
       if (t >= INTRO[i].t && t <= INTRO[i + 1].t) { a = INTRO[i]; b = INTRO[i + 1]; break; }
@@ -101,7 +101,8 @@ export class Story {
       return;
     }
 
-    const atGrate = player.pos.distanceTo(new THREE.Vector3(-7.1, 0.7, 2.6)) < 2.1 && this.zone === 'parlor';
+    const gp = level.gratePos || new THREE.Vector3(GRATE.x + 0.55, 0.7, GRATE.z);
+    const atGrate = player.pos.distanceTo(gp) < 2.1 && this.zone === 'parlor';
     const said = voice.flags.bound || (voice.flags.frag === 'maren');
     const know = this.fragments.maren || (this.fragments.ma && this.fragments.ren);
     if (atGrate && know && this.hasDamper && (said || (voice.mode === 'whisper' && this.known.includes('MAREN')))) {
