@@ -139,9 +139,15 @@ export function makeMaterials(quality) {
     for (let y = 0, row = 0; y < s; y += bh, row++) {
       const off = (row % 2) * (bw / 2);
       for (let x = -bw; x < s; x += bw) {
-        const r = 72 + Math.random() * 30;
-        g.fillStyle = `rgb(${r},${r * 0.42},${r * 0.28})`;
+        const moss = Math.random() > 0.82;
+        const r = moss ? 58 + Math.random() * 18 : 68 + Math.random() * 28;
+        const gch = moss ? r * 0.72 : r * 0.42;
+        g.fillStyle = `rgb(${r},${gch},${r * 0.26})`;
         g.fillRect(x + off + 1, y + 1, bw - 2, bh - 2);
+        if (Math.random() > 0.9) {
+          g.fillStyle = 'rgba(30,18,12,0.45)';
+          g.fillRect(x + off + 4, y + 3, bw - 10, 3);
+        }
       }
     }
   });
@@ -167,6 +173,25 @@ export function makeMaterials(quality) {
     }
     noise(g, s, 16, [1, 0.4, 0.3]);
   });
+
+  const boardMap = canvas(256, (g, s) => {
+    g.fillStyle = '#4a3424';
+    g.fillRect(0, 0, s, s);
+    const plank = 36;
+    for (let y = 0; y < s; y += plank) {
+      const grey = 88 + ((y / plank) % 3) * 18;
+      g.fillStyle = `rgb(${grey},${grey * 0.62},${grey * 0.36})`;
+      g.fillRect(0, y, s, plank - 3);
+      g.fillStyle = 'rgba(20,12,6,0.45)';
+      g.fillRect(0, y + plank - 3, s, 3);
+      for (let n = 0; n < 3; n++) {
+        g.fillStyle = 'rgba(20,12,8,0.35)';
+        g.fillRect(20 + n * 80, y + 8, 3, 6);
+      }
+    }
+    noise(g, s, 22, [1, 0.8, 0.5]);
+  });
+  boardMap.repeat.set(1, 2);
 
   const rustMap = canvas(256, (g, s) => {
     g.fillStyle = '#2a2420';
@@ -202,6 +227,7 @@ export function makeMaterials(quality) {
   const fabric = std(fabricMap, { roughness: 0.9, side: THREE.DoubleSide });
   const carpet = std(carpetMap, { roughness: 0.98 });
   const iron = std(rustMap, { roughness: 0.45, metalness: 0.72, color: 0x9a8a7a });
+  const board = std(boardMap, { roughness: 0.92, color: 0xd8c4a8 });
   const brass = new THREE.MeshStandardMaterial({
     color: 0xb08a4a, roughness: 0.35, metalness: 0.85, emissive: 0x221400, emissiveIntensity: 0.15,
   });
@@ -217,20 +243,20 @@ export function makeMaterials(quality) {
   });
   // Lit interior glass — warm glow must read from the yard (not beige boards, not grey plaques).
   const glassWarm = new THREE.MeshStandardMaterial({
-    color: 0x3a2a18,
-    emissive: 0xffb060,
-    emissiveIntensity: 1.15,
-    roughness: 0.22,
-    metalness: 0.02,
+    color: 0x4a3018,
+    emissive: 0xffc078,
+    emissiveIntensity: 1.65,
+    roughness: 0.12,
+    metalness: 0.04,
     transparent: true,
-    opacity: 0.62,
+    opacity: 0.55,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
   const windowGlow = new THREE.MeshBasicMaterial({
-    color: 0xffc078,
+    color: 0xffd090,
     transparent: true,
-    opacity: 0.55,
+    opacity: 0.72,
     depthWrite: false,
     side: THREE.DoubleSide,
     toneMapped: false,
@@ -352,7 +378,7 @@ export function makeMaterials(quality) {
   return {
     wood, woodDark, floor, plaster, wallpaper, wallpaperWarm, brick, fabric, carpet,
     iron, brass, porcelain, glass, glassWarm, ember, soot, linen, coat, lampShade, white, black, curtainMat,
-    grass, shingle, leaf, bark, runner, portrait, windowGlow,
+    grass, shingle, leaf, bark, runner, portrait, windowGlow, board,
     maps: { woodMap, floorMap, plasterMap },
   };
 }

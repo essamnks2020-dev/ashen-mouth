@@ -21,7 +21,7 @@ export function box(ctx, mat, x, y, z, w, h, d, opts = {}) {
   const m = new THREE.Mesh(ctx.unit, mat);
   m.position.set(x, y, z);
   m.scale.set(w, h, d);
-  m.castShadow = opts.cast !== false && ctx.quality === 'high';
+  m.castShadow = opts.cast === true && ctx.quality === 'high';
   m.receiveShadow = opts.recv !== false;
   (opts.parent || ctx.root).add(m);
   if (opts.collide) {
@@ -34,7 +34,7 @@ export function cyl(ctx, mat, x, y, z, rTop, rBot, h, opts = {}) {
   const m = new THREE.Mesh(ctx.cyl, mat);
   m.position.set(x, y, z);
   m.scale.set(rTop, h, rBot ?? rTop);
-  m.castShadow = opts.cast !== false && ctx.quality === 'high';
+  m.castShadow = opts.cast === true && ctx.quality === 'high';
   m.receiveShadow = opts.recv !== false;
   if (opts.rotX) m.rotation.x = opts.rotX;
   if (opts.rotZ) m.rotation.z = opts.rotZ;
@@ -221,7 +221,7 @@ export function ceilingLamp(ctx, x, y, z, opts = {}) {
   const L = new THREE.PointLight(color, base, opts.dist ?? 9.5, 1.45);
   L.position.set(x, y - 0.28, z);
   ctx.root.add(L);
-  ctx.lights.push({ light: L, base, flicker: opts.flicker ?? 0.02, id: opts.id, toggle: !!opts.toggle, on: true });
+  ctx.lights.push({ light: L, base, flicker: opts.flicker ?? 0.02, id: opts.id, toggle: true, on: true });
 }
 
 export function placeWindow(ctx, spec) {
@@ -239,40 +239,73 @@ export function placeWindow(ctx, spec) {
     x = spec.xFace; z = spec.c; ww = 0.08; wd = w + 0.1; inward = -1;
   }
   const isWE = spec.wall === 'w' || spec.wall === 'e';
-  // Deep casing + sill so windows read as openings, not stickers.
-  box(ctx, ctx.mats.wood, x, y, z, isWE ? 0.12 : w + 0.18, h + 0.2, isWE ? w + 0.18 : 0.12, { collide: false, cast: false });
-  box(ctx, ctx.mats.woodDark, x, spec.y + WIN_SILL - 0.05, z + (isWE ? 0 : inward * 0.05),
-    isWE ? 0.14 : w + 0.22, 0.08, isWE ? w + 0.22 : 0.14, { collide: false });
-  box(ctx, ctx.mats.woodDark, x, spec.y + WIN_HEAD + 0.04, z + (isWE ? 0 : inward * 0.03),
-    isWE ? 0.12 : w + 0.18, 0.06, isWE ? w + 0.18 : 0.12, { collide: false, cast: false });
-  // Dark reveal behind glass
-  const dark = box(ctx, ctx.mats.soot, x + (isWE ? inward * 0.02 : 0), y, z + (isWE ? 0 : inward * 0.02),
-    isWE ? 0.04 : w - 0.06, h - 0.08, isWE ? w - 0.06 : 0.04, { collide: false, cast: false });
+  // Frame only. A solid casing box reads as a beige board from the yard.
+  if (!isWE) {
+    box(ctx, ctx.mats.wood, x - w * 0.5 - 0.06, y, z, 0.1, h + 0.22, 0.1, { collide: false, cast: true });
+    box(ctx, ctx.mats.wood, x + w * 0.5 + 0.06, y, z, 0.1, h + 0.22, 0.1, { collide: false, cast: true });
+    box(ctx, ctx.mats.woodDark, x, spec.y + WIN_HEAD + 0.06, z, w + 0.22, 0.08, 0.1, { collide: false, cast: false });
+  } else {
+    box(ctx, ctx.mats.wood, x, y, spec.c - w * 0.5 - 0.06, 0.1, h + 0.22, 0.1, { collide: false, cast: true });
+    box(ctx, ctx.mats.wood, x, y, spec.c + w * 0.5 + 0.06, 0.1, h + 0.22, 0.1, { collide: false, cast: true });
+    box(ctx, ctx.mats.woodDark, x, spec.y + WIN_HEAD + 0.06, spec.c, 0.1, 0.08, w + 0.22, { collide: false, cast: false });
+  }
+  box(ctx, ctx.mats.woodDark, x, spec.y + WIN_SILL - 0.06, z + (isWE ? 0 : inward * 0.06),
+    isWE ? 0.16 : w + 0.28, 0.1, isWE ? w + 0.28 : 0.16, { collide: false, cast: true });
+  box(ctx, ctx.mats.wood, x, spec.y + WIN_SILL - 0.12, z + (isWE ? inward * 0.02 : inward * 0.08),
+    isWE ? 0.05 : w + 0.1, 0.04, isWE ? w + 0.1 : 0.05, { collide: false, cast: false });
+  const dark = box(ctx, ctx.mats.soot, x + (isWE ? inward * 0.08 : 0), y, z + (isWE ? 0 : inward * 0.08),
+    isWE ? 0.03 : w - 0.12, h - 0.12, isWE ? w - 0.12 : 0.03, { collide: false, cast: false });
   dark.castShadow = false;
-  const inset = inward * 0.04;
-  const gx = isWE ? x + inset : x;
-  const gz = isWE ? z : z + inset;
-  const glass = box(ctx, ctx.mats.glassWarm, gx, y, gz,
-    isWE ? 0.02 : w - 0.14, h - 0.16, isWE ? w - 0.14 : 0.02, { collide: false, cast: false });
+  const gx = isWE ? x + inward * 0.01 : x;
+  const gz = isWE ? z : z + inward * 0.01;
+  const glassMat = spec.boarded ? ctx.mats.glass : ctx.mats.glassWarm;
+  const glass = box(ctx, glassMat, gx, y, gz,
+    isWE ? 0.018 : w - 0.16, h - 0.18, isWE ? w - 0.16 : 0.018, { collide: false, cast: false });
   glass.castShadow = false;
-  const glow = box(ctx, ctx.mats.windowGlow, gx + (isWE ? inward * 0.01 : 0), y, gz + (isWE ? 0 : inward * 0.01),
-    isWE ? 0.015 : w - 0.22, h - 0.24, isWE ? w - 0.22 : 0.015, { collide: false, cast: false, recv: false });
-  glow.castShadow = false;
+  if (!spec.boarded) {
+    const glow = box(ctx, ctx.mats.windowGlow, gx - (isWE ? inward * 0.02 : 0), y, gz - (isWE ? 0 : inward * 0.02),
+      isWE ? 0.012 : w - 0.2, h - 0.22, isWE ? w - 0.2 : 0.012, { collide: false, cast: false, recv: false });
+    glow.castShadow = false;
+  }
   // Four-lite muntins
   box(ctx, ctx.mats.woodDark, gx, y, gz, isWE ? 0.022 : 0.03, h - 0.18, isWE ? 0.03 : 0.022, { collide: false, cast: false });
   box(ctx, ctx.mats.woodDark, gx, y, gz, isWE ? 0.022 : w - 0.18, 0.03, isWE ? w - 0.18 : 0.022, { collide: false, cast: false });
-  // Exterior shutter blades (thin, offset) so facade isn't bare brick + glow.
+
+  if (spec.boarded) {
+    const boards = spec.boarded === true ? 5 : spec.boarded;
+    for (let i = 0; i < boards; i++) {
+      const t = (i + 0.5) / boards;
+      const off = (t - 0.5) * h * 0.78;
+      const tilt = (i % 2 === 0 ? 1 : -1) * 0.08;
+      const plank = box(ctx, ctx.mats.board, gx + (isWE ? inward * 0.03 : 0), y + off, gz + (isWE ? 0 : inward * 0.03),
+        isWE ? 0.04 : w - 0.08, 0.11, isWE ? w - 0.08 : 0.04, { collide: false, cast: true });
+      plank.rotation.z = isWE ? 0 : tilt;
+      plank.rotation.x = isWE ? tilt : 0;
+      // nail heads
+      box(ctx, ctx.mats.iron, gx + (isWE ? inward * 0.05 : -w * 0.32), y + off, gz + (isWE ? -w * 0.28 : inward * 0.05),
+        0.02, 0.02, 0.02, { collide: false, cast: false });
+      box(ctx, ctx.mats.iron, gx + (isWE ? inward * 0.05 : w * 0.32), y + off, gz + (isWE ? w * 0.28 : inward * 0.05),
+        0.02, 0.02, 0.02, { collide: false, cast: false });
+    }
+    ctx.interact.push({
+      kind: 'note', id: 'board-' + spec.wall + spec.c + spec.y,
+      title: 'Boarded pane',
+      pos: new THREE.Vector3(gx, y, gz), reach: 1.55,
+      body: 'Someone nailed this shut from the outside. The wood has gone silver. A gap still lets the house breathe.',
+    });
+  }
+
   if (!isWE && ctx.quality !== 'low') {
     const sx = w * 0.5 + 0.12;
     for (const side of [-1, 1]) {
-      box(ctx, ctx.mats.woodDark, x + side * sx, y, z + inward * 0.02, 0.18, h * 0.92, 0.04, { collide: false, cast: false });
+      box(ctx, ctx.mats.woodDark, x + side * sx, y, z + inward * 0.02, 0.18, h * 0.92, 0.04, { collide: false, cast: true });
       for (const uy of [-0.22, 0, 0.22]) {
         box(ctx, ctx.mats.wood, x + side * sx, y + uy * h * 0.35, z + inward * 0.04, 0.14, 0.03, 0.02, { collide: false, cast: false });
       }
     }
   }
 
-  if (spec.curtains && ctx.quality !== 'low') {
+  if (spec.curtains && !spec.boarded && ctx.quality !== 'low') {
     const cz = isWE ? z : z + inward * 0.12;
     const cx = isWE ? x + inward * 0.12 : x;
     addCurtains(ctx, isWE ? z : x, spec.y + (WIN_SILL + WIN_HEAD) * 0.5, isWE, cx, cz, w, h + 0.35);
@@ -327,6 +360,12 @@ export function makeDoor(ctx, x, y, z, rotY, id, title, startClosed, openSign, o
   if (opts.front) {
     box(ctx, ctx.mats.brass, pw * 0.5, 1.35, 0.04, 0.18, 0.04, 0.02, { parent: leaf, cast: false });
     box(ctx, ctx.mats.iron, pw * 0.5, 0.92, 0.035, 0.16, 0.08, 0.02, { parent: leaf, cast: false });
+    // Mail slot + weathered kick plate + peeling paint chip
+    box(ctx, ctx.mats.iron, pw * 0.5, 0.42, 0.03, 0.28, 0.06, 0.015, { parent: leaf, cast: false });
+    box(ctx, ctx.mats.soot, pw * 0.5, 0.42, 0.038, 0.22, 0.025, 0.01, { parent: leaf, cast: false });
+    box(ctx, ctx.mats.iron, pw * 0.5, 0.14, 0.03, pw - 0.08, 0.18, 0.02, { parent: leaf, cast: false });
+    box(ctx, ctx.mats.wood, 0.22, 1.05, 0.028, 0.12, 0.18, 0.01, { parent: leaf, cast: false });
+    box(ctx, ctx.mats.wood, 0.78 * pw, 0.72, 0.028, 0.1, 0.14, 0.01, { parent: leaf, cast: false });
   }
 
   const colW = rotY !== 0 ? 0.16 : 1.02;
@@ -350,7 +389,7 @@ export function makeDoor(ctx, x, y, z, rotY, id, title, startClosed, openSign, o
     use(story, audio) {
       door.want = door.want > 0.5 ? 0 : 1;
       audio?.door?.(x, y, z);
-      return { hint: door.want ? 'The door takes its weight.' : 'It settles shut.' };
+      return { hint: door.want ? 'It takes its weight and lets you through.' : 'It settles shut. The latch still knows this house.' };
     },
   });
   return door;
@@ -364,10 +403,16 @@ export function picture(ctx, x, y, z, w, h, wall, matInner) {
     isWE ? 0.01 : w - 0.08, h - 0.08, isWE ? w - 0.08 : 0.01, { collide: false, cast: false });
 }
 
-export function switchPlate(ctx, x, y, z, wall) {
+export function switchPlate(ctx, x, y, z, wall, lightId) {
   const isWE = wall === 'w' || wall === 'e';
   box(ctx, ctx.mats.porcelain, x, y, z, isWE ? 0.02 : 0.07, 0.11, isWE ? 0.07 : 0.02, { collide: false, cast: false });
   box(ctx, ctx.mats.brass, x, y, z, isWE ? 0.03 : 0.02, 0.04, isWE ? 0.02 : 0.03, { collide: false, cast: false });
+  if (lightId) {
+    ctx.interact.push({
+      kind: 'light', id: lightId + '-switch', title: 'Light switch',
+      pos: new THREE.Vector3(x, y, z), reach: 1.45, lightId,
+    });
+  }
 }
 
 export function rug(ctx, x, y, z, w, d, mat) {
@@ -439,10 +484,12 @@ export function armchair(ctx, x, y, z, rotY) {
   ctx.root.add(g);
   const P = { parent: g };
   const f = ctx.mats.fabric;
-  box(ctx, f, 0, 0.28, 0, 0.72, 0.28, 0.70, P);
-  box(ctx, f, 0, 0.55, -0.24, 0.72, 0.46, 0.2, P);
-  box(ctx, f, -0.38, 0.42, 0, 0.14, 0.4, 0.68, P);
-  box(ctx, f, 0.38, 0.42, 0, 0.14, 0.4, 0.68, P);
+  box(ctx, ctx.mats.woodDark, 0, 0.08, 0, 0.7, 0.1, 0.66, P);
+  box(ctx, f, 0, 0.3, 0.02, 0.68, 0.26, 0.62, P);
+  box(ctx, f, 0, 0.58, -0.24, 0.68, 0.48, 0.16, P);
+  box(ctx, f, -0.36, 0.44, 0, 0.12, 0.42, 0.62, P);
+  box(ctx, f, 0.36, 0.44, 0, 0.12, 0.42, 0.62, P);
+  box(ctx, ctx.mats.linen, 0, 0.46, 0.06, 0.5, 0.08, 0.42, { ...P, cast: false });
   ctx.world.addBox(x, y + 0.38, z, 0.82, 0.76, 0.78, { surface: 'wood' });
 }
 
@@ -608,6 +655,71 @@ export function fridge(ctx, x, y, z) {
   box(ctx, ctx.mats.iron, x - 0.3, 0.42, z, 0.04, 0.55, 0.5, { collide: false, cast: false });
   box(ctx, ctx.mats.brass, x - 0.33, 1.15, z + 0.12, 0.03, 0.22, 0.03, { collide: false, cast: false });
   box(ctx, ctx.mats.brass, x - 0.33, 0.42, z + 0.12, 0.03, 0.14, 0.03, { collide: false, cast: false });
+}
+
+export function piano(ctx, x, y, z, rotY) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  g.rotation.y = rotY || 0;
+  ctx.root.add(g);
+  const P = { parent: g };
+  box(ctx, ctx.mats.woodDark, 0, 0.38, 0, 1.42, 0.76, 0.58, P);
+  box(ctx, ctx.mats.wood, 0, 0.78, -0.02, 1.38, 0.06, 0.52, P);
+  box(ctx, ctx.mats.linen, 0, 0.82, 0.02, 1.22, 0.03, 0.18, { ...P, cast: false });
+  box(ctx, ctx.mats.woodDark, 0, 1.22, -0.22, 1.38, 0.86, 0.16, P);
+  box(ctx, ctx.mats.wood, 0, 1.66, -0.22, 1.42, 0.05, 0.2, P);
+  const lid = new THREE.Group();
+  lid.position.set(0, 1.68, -0.14);
+  g.add(lid);
+  box(ctx, ctx.mats.wood, 0, 0.02, -0.18, 1.36, 0.03, 0.42, { parent: lid, cast: false });
+  const anim = { open: 0.22, want: 0.22 };
+  ctx.living.push({
+    update(dt) {
+      anim.open = damp(anim.open, anim.want, 4, dt);
+      lid.rotation.x = -anim.open * 0.55;
+    },
+  });
+  ctx.world.addBox(x, y + 0.7, z, 1.5, 1.4, 0.64, { surface: 'wood' });
+  ctx.interact.push({
+    kind: 'lid', id: 'piano', title: 'Upright piano',
+    pos: new THREE.Vector3(x, y + 0.9, z), reach: 1.7, anim,
+    body: 'The last key that still sounds is the D below middle C. Dust in the others. She used to hum while he played. The house kept the hum.',
+  });
+}
+
+export function radio(ctx, x, y, z) {
+  box(ctx, ctx.mats.woodDark, x, y, z, 0.42, 0.22, 0.22, { collide: false, cast: false });
+  box(ctx, ctx.mats.linen, x, y + 0.02, z + 0.1, 0.28, 0.1, 0.02, { collide: false, cast: false });
+  const kn = cyl(ctx, ctx.mats.brass, x + 0.14, y + 0.04, z + 0.08, 0.03, 0.03, 0.02, { cast: false });
+  ctx.living.push({
+    update(dt, t) { kn.rotation.y = Math.sin(t * 0.35) * 0.4; },
+  });
+  ctx.interact.push({
+    kind: 'note', id: 'radio', title: 'Bakelite radio',
+    pos: new THREE.Vector3(x, y, z), reach: 1.5,
+    body: 'A station that is only static now. She left it on the night she burned the tapes, as if noise could drown what the grate had learned.',
+  });
+}
+
+export function rocker(ctx, x, y, z, rotY) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  g.rotation.y = rotY || 0;
+  ctx.root.add(g);
+  const P = { parent: g };
+  const f = ctx.mats.fabric;
+  box(ctx, f, 0, 0.42, 0, 0.62, 0.12, 0.58, P);
+  box(ctx, f, 0, 0.72, -0.22, 0.62, 0.52, 0.12, P);
+  box(ctx, ctx.mats.woodDark, 0, 0.08, 0, 0.7, 0.04, 0.78, P);
+  ctx.living.push({
+    update(dt, t) { g.rotation.x = Math.sin(t * 0.7) * 0.045; },
+  });
+  ctx.world.addBox(x, y + 0.4, z, 0.72, 0.8, 0.72, { surface: 'wood' });
+  ctx.interact.push({
+    kind: 'note', id: 'rocker', title: 'Rocking chair',
+    pos: new THREE.Vector3(x, y + 0.6, z), reach: 1.5,
+    body: 'It moves when nobody sits. The house keeping time. She used to wait here until the parlor went quiet.',
+  });
 }
 
 export function setDoorOpen(door, open) {

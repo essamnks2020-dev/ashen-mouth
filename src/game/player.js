@@ -20,8 +20,11 @@ export class Player {
     this.stepT = 0;
     this.surface = 'wood';
     this.moved = 0;
-    this.fovBase = 68;
+    this.fovBase = 64;
     this._eyeSmoothed = 1.58;
+    this._yawS = this.yaw;
+    this._pitchS = this.pitch;
+    this.bobOn = true;
 
     this.lantern = new THREE.SpotLight(0xffe8c8, 0.95, 11, 0.58, 0.55, 1.4);
     this.lantern.castShadow = false;
@@ -54,7 +57,9 @@ export class Player {
     const look = input.look();
     this.yaw -= look.x;
     this.pitch -= look.y;
-    this.pitch = clamp(this.pitch, -1.25, 1.25);
+    this.pitch = clamp(this.pitch, -1.22, 1.22);
+    this._yawS = dampAWrap(this._yawS, this.yaw, 22, dt);
+    this._pitchS = damp(this._pitchS, this.pitch, 22, dt);
 
     const crouchWant = input.held('ControlLeft') || input.held('ControlRight') || input.held('KeyC') ? 1 : 0;
     this.crouch = damp(this.crouch, crouchWant, 10, dt);
@@ -103,13 +108,14 @@ export class Player {
       }
     } else this.stepT = 0;
 
-    const bobY = Math.sin(this.bob * 2) * spd * (this.world.onRamp ? 0.018 : 0.01);
-    const bobX = Math.cos(this.bob) * spd * 0.005;
-    this._eyeSmoothed = damp(this._eyeSmoothed, this.eye, 14, dt);
+    const bobAmt = this.bobOn ? 1 : 0.18;
+    const bobY = Math.sin(this.bob * 2) * spd * (this.world.onRamp ? 0.012 : 0.007) * bobAmt;
+    const bobX = Math.cos(this.bob) * spd * 0.0035 * bobAmt;
+    this._eyeSmoothed = damp(this._eyeSmoothed, this.eye, 16, dt);
     this.cam.position.set(this.pos.x + bobX, this.pos.y + this._eyeSmoothed + bobY, this.pos.z);
     this.cam.rotation.order = 'YXZ';
-    this.cam.rotation.y = this.yaw;
-    this.cam.rotation.x = this.pitch;
+    this.cam.rotation.y = this._yawS;
+    this.cam.rotation.x = this._pitchS;
 
     this.hand.rotation.z = Math.sin(this.bob) * 0.04;
     this.hand.rotation.x = Math.cos(this.bob * 2) * 0.03;
@@ -121,3 +127,9 @@ export class Player {
 }
 
 function lerp(a, b, t) { return a + (b - a) * t; }
+function dampAWrap(a, b, lambda, dt) {
+  let d = (b - a) % (Math.PI * 2);
+  if (d > Math.PI) d -= Math.PI * 2;
+  if (d < -Math.PI) d += Math.PI * 2;
+  return a + d * (1 - Math.exp(-lambda * dt));
+}

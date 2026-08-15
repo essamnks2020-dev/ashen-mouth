@@ -3,7 +3,7 @@ import * as THREE from 'three';
 export class Life {
   constructor(scene, quality) {
     this.quality = quality;
-    const n = quality === 'high' ? 18 : quality === 'medium' ? 10 : 0;
+    const n = quality === 'high' ? 10 : quality === 'medium' ? 6 : 0;
     this.moths = [];
     if (n) {
       const geo = new THREE.PlaneGeometry(0.07, 0.035);
@@ -23,7 +23,7 @@ export class Life {
     }
     this.lamp = new THREE.Vector3(-3.05, 1.18, 4.38);
 
-    const dustN = quality === 'low' ? 0 : quality === 'high' ? 48 : 24;
+      const dustN = quality === 'low' ? 0 : quality === 'high' ? 28 : 16;
     this.dust = null;
     if (dustN) {
       const pos = new Float32Array(dustN * 3);

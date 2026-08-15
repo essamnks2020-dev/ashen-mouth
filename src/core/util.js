@@ -45,9 +45,14 @@ export function loadSettings() {
       invertY: false,
       mic: true,
       mute: false,
+      fov: 64,
+      bob: true,
     }, JSON.parse(localStorage.getItem('ashen-mouth') || '{}'));
   } catch {
-    return { quality: 'high', master: 0.85, sfx: 1, music: 0.55, sens: 1, invertY: false, mic: true, mute: false };
+    return {
+      quality: 'high', master: 0.85, sfx: 1, music: 0.55, sens: 1,
+      invertY: false, mic: true, mute: false, fov: 64, bob: true,
+    };
   }
 }
 export function saveSettings(s) {

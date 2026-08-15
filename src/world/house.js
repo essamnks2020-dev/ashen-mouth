@@ -75,7 +75,7 @@ export function buildHouse(scene, world, mats, quality) {
     if (w.wall === 'e') spec.xFace = X1 + 0.01;
     placeWindow(ctx, spec);
   }
-  const glowWins = WINDOWS.filter((w) => w.wall === 's' || (w.wall === 'w' && w.y === 0));
+  const glowWins = WINDOWS.filter((w) => !w.boarded && (w.wall === 's' || (w.wall === 'w' && w.y === 0)));
   for (const w of glowWins) {
     windowFill(ctx, w.wall, w.c, w.y, xi0, zi1);
   }

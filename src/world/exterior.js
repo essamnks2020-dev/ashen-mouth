@@ -87,7 +87,7 @@ function tree(ctx, x, z) {
     [0.1, 3.05, 0.7, 0.55, 0.65],
   ];
   for (const [ox, oy, sx, sy, sz] of layers) {
-    const canopy = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), ctx.mats.leaf);
+    const canopy = new THREE.Mesh(new THREE.SphereGeometry(1, 7, 6), ctx.mats.leaf);
     canopy.position.set(x + ox, oy, z);
     canopy.scale.set(sx, sy, sz);
     canopy.castShadow = ctx.quality === 'high';
@@ -102,6 +102,12 @@ function hedge(ctx, x, z) {
   box(ctx, ctx.mats.leaf, x - 0.18, 0.42, z - 0.05, 0.42, 0.4, 0.28, { collide: false, cast: false });
 }
 
+function ivy(ctx, x, z, h) {
+  for (let i = 0; i < 6; i++) {
+    box(ctx, ctx.mats.leaf, x + (i % 2) * 0.08, 0.25 + i * h * 0.18, z, 0.22, 0.28, 0.08, { collide: false, cast: false });
+  }
+}
+
 export function buildPorch(ctx) {
   const zDeck = Z1 + 1.2;
   // Raised deck + steps (visual; walkable ground plane already covers approach)
@@ -110,7 +116,7 @@ export function buildPorch(ctx) {
   box(ctx, ctx.mats.woodDark, 0, -0.02, zDeck + 1.35, 1.7, 0.08, 0.4, { collide: false });
 
   for (const x of [-1.85, 1.85]) {
-    box(ctx, ctx.mats.wood, x, 1.4, Z1 + 2.2, 0.16, 2.65, 0.16, { collide: true });
+    box(ctx, ctx.mats.wood, x, 1.4, Z1 + 2.2, 0.16, 2.65, 0.16, { collide: true, cast: true });
     box(ctx, ctx.mats.wood, x, 1.4, Z1 + 0.4, 0.16, 2.65, 0.16, { collide: false });
     // Capital + base
     box(ctx, ctx.mats.woodDark, x, 2.7, Z1 + 2.2, 0.22, 0.08, 0.22, { collide: false, cast: false });
@@ -136,9 +142,23 @@ export function buildPorch(ctx) {
     }
   }
 
-  // House number plate
+  // House number plate — 14
   box(ctx, ctx.mats.brass, 0.78, 1.78, Z1 + 0.1, 0.32, 0.2, 0.03, { collide: false, cast: false });
   box(ctx, ctx.mats.woodDark, 0.78, 1.78, Z1 + 0.12, 0.26, 0.14, 0.01, { collide: false, cast: false });
+
+  // Downspout, peeling eaves, ivy, and a few weathered boards stacked by the step.
+  box(ctx, ctx.mats.iron, -1.95, 1.6, Z1 + 0.06, 0.05, 3.1, 0.05, { collide: false, cast: false });
+  box(ctx, ctx.mats.iron, -1.95, 3.12, Z1 + 0.28, 0.05, 0.05, 0.5, { collide: false, cast: false });
+  box(ctx, ctx.mats.woodDark, 0, 2.68, zDeck + 0.08, 4.4, 0.04, 2.75, { collide: false, cast: false });
+  ivy(ctx, -1.85, Z1 + 0.22, 0.9);
+  ivy(ctx, 1.7, Z1 + 0.18, 0.7);
+  box(ctx, ctx.mats.board, 1.55, 0.12, zDeck + 0.85, 0.7, 0.06, 0.14, { collide: false, cast: true });
+  box(ctx, ctx.mats.board, 1.62, 0.2, zDeck + 0.82, 0.62, 0.06, 0.12, { collide: false, cast: false });
+  ctx.interact.push({
+    kind: 'note', id: 'number', title: 'Number 14',
+    pos: new THREE.Vector3(0.78, 1.2, Z1 + 0.2), reach: 1.6,
+    body: 'The eight has fallen off. Someone has scratched 14 into the brass so the postman still knows.',
+  });
 }
 
 export function buildRoof(ctx) {
@@ -179,9 +199,10 @@ export function buildRoof(ctx) {
   // Ridge + chimney
   box(ctx, ctx.mats.woodDark, 0, H2 + rise + 0.08, OZ, 0.18, 0.14, d + 0.15, { collide: false });
   const cx = X0 + 1.25, cz = Z0 + 2.5;
-  box(ctx, ctx.mats.brick, cx, H2 + 1.45, cz, 0.7, 2.9, 0.7, { collide: false });
+  box(ctx, ctx.mats.brick, cx, H2 + 1.45, cz, 0.7, 2.9, 0.7, { collide: false, cast: true });
   box(ctx, ctx.mats.brick, cx, H2 + 2.95, cz, 0.82, 0.18, 0.82, { collide: false, cast: false });
   box(ctx, ctx.mats.iron, cx, H2 + 3.12, cz, 0.55, 0.12, 0.55, { collide: false, cast: false });
+  ivy(ctx, cx + 0.4, cz + 0.2, 1.1);
 
   // Foundation / water table
   const foundH = 0.34;
@@ -196,8 +217,8 @@ export function windowFill(ctx, wall, c, yStorey, xFace, zFace) {
   else if (wall === 'n') { x = c; z = zFace + 0.45; }
   else if (wall === 'w') { x = xFace + 0.5; z = c; }
   else { x = xFace - 0.5; z = c; }
-  const fill = new THREE.PointLight(0xffd2a0, 0.55, 5.2, 1.7);
+  const fill = new THREE.PointLight(0xffd2a0, 0.38, 4.4, 1.8);
   fill.position.set(x, y, z);
   ctx.root.add(fill);
-  ctx.lights.push({ light: fill, base: 0.55, flicker: 0.01 });
+  ctx.lights.push({ light: fill, base: 0.38, flicker: 0.01 });
 }

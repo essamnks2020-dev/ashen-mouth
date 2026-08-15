@@ -4,16 +4,16 @@ import { toggleLight } from '../world/house.js';
 import { GRATE, SPAWN, MAIN_STAIR } from '../world/plan.js';
 
 const INTRO = [
-  { t: 0.0, pos: [8.2, 2.35, 17.6], look: [0.15, 3.6, 2.4], card: '14 ASHEN LANE', line: 'The Holloway house. Tomorrow the sign goes up.' },
-  { t: 4.2, pos: [3.6, 1.72, 14.2], look: [0.1, 2.4, 5.6], card: '', line: 'You have the key. Mother said: go in, close the flue, do not stay after dark.' },
-  { t: 8.0, pos: [0.4, 1.55, 11.4], look: [0.05, 1.9, 6.2], card: '', line: 'The yard still knows your feet.' },
-  { t: 11.5, pos: [0.05, 1.52, 8.15], look: [0, 1.55, 5.35], card: '', line: 'The porch light never went out.' },
-  { t: 14.8, pos: [0.02, 1.5, 6.55], look: [0, 1.4, 5.15], card: '', line: 'The door still knows your hand.' },
-  { t: 18.2, pos: [-0.35, 1.56, 4.55], look: [-0.2, 1.55, 2.2], card: '', line: 'This is the house you grew up in. Clock. Coat. Stairs.' },
-  { t: 22.5, pos: [-3.15, 1.48, 3.05], look: [GRATE.x + 0.45, 0.78, GRATE.z], card: '', line: 'After Father died she burned every tape. She fed them to the grate.' },
-  { t: 27.0, pos: [-0.35, 1.6, 3.7], look: [MAIN_STAIR.x, 2.1, MAIN_STAIR.zBot - 0.6], card: 'ASHEN MOUTH', line: 'Find her name. Take the damper from the cellar. Whisper it at the grate.' },
-  { t: 31.2, pos: [SPAWN.x, 1.58, SPAWN.z], look: [SPAWN.x, 1.35, SPAWN.z - 2.2], card: '', line: 'Whisper if you must. Never shout.' },
-  { t: 34.5, pos: [SPAWN.x, 1.58, SPAWN.z], look: [SPAWN.x, 1.35, SPAWN.z - 2.2], card: '', line: '' },
+  { t: 0.0, pos: [9.4, 2.15, 18.4], look: [0.1, 3.2, 2.6], card: '14 ASHEN LANE', line: 'They put the sale board up in the morning. Tonight the house is still ours.' },
+  { t: 5.8, pos: [4.2, 1.68, 15.1], look: [0.05, 2.2, 6.0], card: '', line: 'Mother pressed the key into my hand. Close the flue, she said. Do not stay after dark.' },
+  { t: 11.2, pos: [0.55, 1.52, 12.4], look: [0.04, 1.7, 6.4], card: '', line: 'The brick path still finds my feet. Same cracks. Same weeds in the joints.' },
+  { t: 16.4, pos: [0.08, 1.48, 9.15], look: [0, 1.55, 5.45], card: '', line: 'The porch lamp never went out. She left it for someone who was not coming back.' },
+  { t: 21.2, pos: [0.02, 1.46, 7.05], look: [0, 1.42, 5.18], card: '', line: 'The door remembers the weight of my hand. The wood has gone grey at the latch.' },
+  { t: 26.4, pos: [-0.38, 1.52, 4.7], look: [-0.15, 1.5, 2.1], card: '', line: 'Clock. Coat. Stairs. The house smells like the last winter she spent here.' },
+  { t: 32.0, pos: [-3.2, 1.44, 3.1], look: [GRATE.x + 0.45, 0.78, GRATE.z], card: '', line: 'After Father died she burned every tape in that grate. She thought fire would make him quiet.' },
+  { t: 38.2, pos: [-0.32, 1.56, 3.65], look: [MAIN_STAIR.x, 2.05, MAIN_STAIR.zBot - 0.5], card: 'ASHEN MOUTH', line: 'Find her name in the rooms. Take the damper from the cellar. Whisper it at the mouth.' },
+  { t: 43.4, pos: [SPAWN.x, 1.56, SPAWN.z], look: [SPAWN.x, 1.32, SPAWN.z - 2.15], card: '', line: 'If you must speak, speak small. The house has been listening since she fed it his voice.' },
+  { t: 48.0, pos: [SPAWN.x, 1.56, SPAWN.z], look: [SPAWN.x, 1.32, SPAWN.z - 2.15], card: '', line: '' },
 ];
 
 export class Story {
@@ -26,7 +26,7 @@ export class Story {
     this.end = null;
     this.endT = 0;
     this.woke = false;
-    this.hint = 'You are in the house. Close the flue before morning.';
+    this.hint = 'You are in. Close the flue before morning.';
     this.inspect = null;
     this.inspectT = 0;
     this.zone = 'foyer';
@@ -34,12 +34,12 @@ export class Story {
     this.bindT = 0;
   }
 
-  skipIntro() { this.introT = 35; this.introDone = true; }
+  skipIntro() { this.introT = 49; this.introDone = true; }
 
   intro(dt, cam) {
     this.introT += dt;
     const t = this.introT;
-    if (t >= 34.2) { this.introDone = true; return { card: '', line: '' }; }
+    if (t >= 47.6) { this.introDone = true; return { card: '', line: '' }; }
     let a = INTRO[0], b = INTRO[INTRO.length - 1];
     for (let i = 0; i < INTRO.length - 1; i++) {
       if (t >= INTRO[i].t && t <= INTRO[i + 1].t) { a = INTRO[i]; b = INTRO[i + 1]; break; }
@@ -56,7 +56,7 @@ export class Story {
       lerp(a.look[1], b.look[1], s),
       lerp(a.look[2], b.look[2], s),
     );
-    return { card: s < 0.82 ? a.card : b.card, line: s < 0.55 ? a.line : b.line };
+    return { card: s < 0.78 ? a.card : b.card, line: s < 0.52 ? a.line : b.line };
   }
 
   zoneOf(p, zones) {
@@ -74,7 +74,7 @@ export class Story {
     if (!this.woke && (this.zone === 'parlor' || voice.mode !== 'silent' || player.moved > 2.4)) {
       this.woke = true;
       listener.wake();
-      this.hint = 'Something in the house turned its head.';
+      this.hint = 'Something in the parlor turned.';
     }
 
     this.inspectT = Math.max(0, this.inspectT - dt);
@@ -88,13 +88,16 @@ export class Story {
     }
 
     if (this.zone === 'parlor') this.hint = this.fragments.maren || (this.fragments.ma && this.fragments.ren)
-      ? (this.hasDamper ? 'The grate is waiting. Whisper MAREN.' : 'You still need the damper from the cellar.')
-      : 'The grate is the mouth. Find her name in the house.';
-    else if (this.zone === 'cellar') this.hint = this.hasDamper ? 'Take the damper upstairs to the parlor.' : 'The damper wheel is here. The iron is cold.';
-    else if (this.zone === 'kitchen') this.hint = this.fragments.ma ? 'The tap keeps time. Check the parlor and the nursery.' : 'Drawers. A letter. She wrote in small words.';
-    else if (this.zone === 'child') this.hint = this.fragments.ren ? 'You already wrote the last of her name.' : 'The drawing on the wall is yours.';
-    else if (this.zone === 'foyer' && !this.woke) this.hint = 'Clock. Coat. Stairs. You can move. The house is awake enough.';
+      ? (this.hasDamper ? 'The grate is waiting. Whisper MAREN. Small.' : 'You still need the damper. Cellar, under the kitchen.')
+      : 'The grate is the mouth. Her name is somewhere in this house.';
+    else if (this.zone === 'cellar') this.hint = this.hasDamper ? 'Upstairs. Parlor. The mouth will not close without this.' : 'The damper wheel. Cold even through the gloves she left.';
+    else if (this.zone === 'kitchen') this.hint = this.fragments.ma ? 'The tap still keeps time. Nursery. Parlor. The rest of her name.' : 'Drawers. A letter she never posted.';
+    else if (this.zone === 'child') this.hint = this.fragments.ren ? 'You already wrote the end of it. You were small enough then.' : 'The drawing on the wall is yours.';
+    else if (this.zone === 'foyer' && !this.woke) this.hint = 'Clock. Coat. Stairs. You can move. The house is only just waking.';
     else if (this.zone === 'master') this.hint = 'Her room still holds the shape of waiting.';
+    else if (this.zone === 'dining') this.hint = 'Four chairs. Dust on the one that faced the parlor door.';
+    else if (this.zone === 'landing') this.hint = 'From here the chimney sounds like someone breathing through iron.';
+    else if (this.zone === 'porch') this.hint = 'Go in. The flue will not close from out here.';
 
     if (this.end) {
       this.endT += dt;
@@ -122,7 +125,7 @@ export class Story {
       listener.state = 'hunt';
       listener.huntT = 12;
       listener.lastHeard.copy(player.pos);
-      this.hint = 'You said your name like you meant it. The house heard.';
+      this.hint = 'You said your own name like you meant it. The house has it now.';
     }
 
     if (listener.state === 'attack' && listener.attackT > 1.15) {
@@ -144,7 +147,7 @@ export class Story {
     }
     if (it.kind === 'light') {
       const on = toggleLight(level, it.lightId);
-      this.inspect = { title: it.title, body: on ? 'Warm light holds the room.' : 'The dark comes back in.' };
+      this.inspect = { title: it.title, body: on ? 'Warmth holds a little of the room.' : 'The dark comes back in, like it was waiting.' };
       this.inspectT = 2.2;
       emitSound(it.pos, 2.5, 'click');
       return;
@@ -153,19 +156,20 @@ export class Story {
       if (it.anim) it.anim.want = it.anim.want > 0.5 ? 0 : 1;
       if (it.frag) this._learn(it.frag);
       this.inspect = { title: it.title, body: it.body || '' };
-      this.inspectT = 5.5;
+      this.inspectT = 6.2;
       emitSound(it.pos, 3.2, 'door');
       return;
     }
     if (it.frag) this._learn(it.frag);
     if (it.kind === 'key' && !this.hasDamper) {
       this.hasDamper = true;
-      this.hint = 'Damper in hand. Take it to the parlor grate.';
+      this.hint = 'Damper in the hand. Parlor grate. Whisper. Do not shout.';
     }
+    if (it.anim && it.kind === 'lid') it.anim.want = it.anim.want > 0.5 ? 0 : 1;
     this.inspect = { title: it.title, body: it.body || '' };
-    this.inspectT = 5.5;
+    this.inspectT = 6.2;
     if (it.kind === 'grate' && this.fragments.maren && this.hasDamper) {
-      this.hint = 'Whisper MAREN. Do not shout.';
+      this.hint = 'Whisper MAREN. Hold V. Do not shout.';
     }
   }
 

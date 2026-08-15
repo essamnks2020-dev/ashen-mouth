@@ -36,10 +36,13 @@ class Game {
 
   async boot() {
     const canvas = $('gl');
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer({
+      canvas, antialias: this.settings.quality !== 'low', powerPreference: 'high-performance',
+      stencil: false, depth: true,
+    });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.72;
+    this.renderer.toneMappingExposure = 1.58;
     this.renderer.shadowMap.enabled = this.settings.quality === 'high';
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.setClearColor(NIGHT, 1);
@@ -49,7 +52,8 @@ class Game {
     this.scene.fog = new THREE.FogExp2(0x1c2634, 0.0048);
     this.scene.background = new THREE.Color(0x0e1620);
 
-    this.camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 220);
+    this.camera = new THREE.PerspectiveCamera(this.settings.fov || 64, innerWidth / innerHeight, 0.1, 160);
+    this._fovShown = this.camera.fov;
 
     this.sky = makeSky();
     this.scene.add(this.sky);
@@ -74,6 +78,8 @@ class Game {
     this.player = new Player(this.camera, this.world);
     this.player.pos.copy(this.level.spawn);
     this.player.yaw = this.level.spawnYaw;
+    this.player.fovBase = this.settings.fov || 64;
+    this.player.bobOn = this.settings.bob !== false;
     this.player.attachLanternMesh(this.mats);
     this.scene.add(this.camera);
 
@@ -156,11 +162,13 @@ class Game {
     $('set-sens').addEventListener('input', (e) => {
       this.settings.sens = +e.target.value;
       this.input.sens = this.settings.sens;
+      if ($('set-sens-val')) $('set-sens-val').textContent = Number(this.settings.sens).toFixed(2);
       saveSettings(this.settings);
     });
     $('set-master').addEventListener('input', (e) => {
       this.settings.master = +e.target.value;
       this.audio.setVolume('master', this.settings.master);
+      if ($('set-master-val')) $('set-master-val').textContent = Math.round(this.settings.master * 100) + '%';
       saveSettings(this.settings);
     });
     $('set-mute').addEventListener('change', (e) => {
@@ -178,6 +186,19 @@ class Game {
       this.input.invertY = this.settings.invertY;
       saveSettings(this.settings);
     });
+    $('set-fov')?.addEventListener('input', (e) => {
+      this.settings.fov = +e.target.value;
+      this.camera.fov = this.settings.fov;
+      this.player.fovBase = this.settings.fov;
+      this._fovShown = -1;
+      $('set-fov-val').textContent = String(this.settings.fov);
+      saveSettings(this.settings);
+    });
+    $('set-bob')?.addEventListener('change', (e) => {
+      this.settings.bob = e.target.checked;
+      if (this.player) this.player.bobOn = this.settings.bob;
+      saveSettings(this.settings);
+    });
     addEventListener('resize', () => this._resize());
   }
 
@@ -188,6 +209,13 @@ class Game {
     $('set-mute').checked = this.settings.mute;
     $('set-mic').checked = this.settings.mic;
     $('set-inverty').checked = this.settings.invertY;
+    if ($('set-fov')) {
+      $('set-fov').value = this.settings.fov || 64;
+      $('set-fov-val').textContent = String(this.settings.fov || 64);
+    }
+    if ($('set-sens-val')) $('set-sens-val').textContent = Number(this.settings.sens).toFixed(2);
+    if ($('set-master-val')) $('set-master-val').textContent = Math.round(this.settings.master * 100) + '%';
+    if ($('set-bob')) $('set-bob').checked = this.settings.bob !== false;
   }
 
   _applyQuality() {
@@ -237,6 +265,9 @@ class Game {
     this.player.pos.copy(this.level.spawn);
     this.player.yaw = this.level.spawnYaw;
     this.player.pitch = -0.04;
+    this.player._yawS = this.player.yaw;
+    this.player._pitchS = this.player.pitch;
+    this.player.bobOn = this.settings.bob !== false;
     this.input.requestLock();
   }
 
@@ -267,11 +298,13 @@ class Game {
     if (this.mats.curtainMat.userData.shader) this.mats.curtainMat.userData.shader.uniforms.uTime.value = t;
 
     for (const L of this.level.lights) {
+      if (!L.light.visible) continue;
       const on = L.on !== false;
       const flick = L.flicker ? Math.sin(t * (4 + (L.id || '').length)) * L.flicker * 0.5 + Math.sin(t * 11.3) * L.flicker * 0.25 : 0;
       L.light.intensity = on ? L.base + flick : 0.02;
     }
     for (const liv of this.level.living) liv.update(dt, t, this.player);
+    this._cullLights();
 
     if (this.mode === 'title' || this.mode === 'settings' || this.mode === 'boot') {
       this.camera.position.set(0.35 + Math.sin(t * 0.06) * 0.25, 1.62, 12.6);
@@ -289,7 +322,7 @@ class Game {
     if (this.mode === 'intro') {
       if (this.player) { this.player.lantern.visible = false; this.player.hand.visible = false; }
       const card = this.story.intro(dt, this.camera);
-      if (this.level.frontDoor) this.level.frontDoor.want = this.story.introT > 14.5 ? 1 : 0;
+      if (this.level.frontDoor) this.level.frontDoor.want = this.story.introT > 21.5 ? 1 : 0;
       $('intro-card').textContent = card.card || '';
       $('intro-radio').textContent = card.line || '';
       if (this.input.pressed('Space') || this.input.pressed('Escape') || this.input.pressed('Enter')) this._skipIntro();
@@ -368,8 +401,13 @@ class Game {
     this.audio.setTension(clamp01(this.listener.aware * 0.5 + (this.listener.state === 'hunt' ? 0.5 : 0) + (dL < 10 ? (10 - dL) / 20 : 0)));
     if (dL < 8 && this.listener.woke) this.audio.heartbeat(dL < 3.5);
 
-    this.camera.fov = damp(this.camera.fov, this.listener.state === 'attack' ? 74 : 68, 4, dt);
-    this.camera.updateProjectionMatrix();
+    const wantFov = this.listener.state === 'attack' ? Math.min(74, this.player.fovBase + 8) : this.player.fovBase;
+    this.camera.fov = damp(this.camera.fov, wantFov, 4, dt);
+    if (Math.abs(this.camera.fov - this._fovShown) > 0.08) {
+      this.camera.updateProjectionMatrix();
+      this._fovShown = this.camera.fov;
+    }
+    if (this.mode === 'play') this._cullLights();
 
     if (this.story.end === 'bind' && this.story.endT > 3.2) {
       this.mode = 'win';
@@ -397,12 +435,12 @@ class Game {
       this.story.fragments.maren ? 'MAREN' : '—',
     ];
     $('hud-frag').textContent = bits.join('   ');
-    $('hud-fork').textContent = this.story.hasDamper ? 'DAMPER' : '';
+    $('hud-fork').textContent = this.story.hasDamper ? 'DAMPER IN HAND' : '';
     $('hint').textContent = this.story.hint;
     const n = this.story.near;
     const prompt = $('prompt');
     if (n) {
-      prompt.textContent = 'E  ·  ' + n.title;
+      prompt.textContent = n.title;
       prompt.classList.add('on');
     } else prompt.classList.remove('on');
 
@@ -424,7 +462,27 @@ class Game {
     const list = $('phrase-list');
     list.innerHTML = this.story.known.length
       ? this.story.known.map((w, i) => `<div class="ph-item"><em>${i + 1}</em>${w}</div>`).join('')
-      : '<div class="ph-item">nothing yet — read the house</div>';
+      : '<div class="ph-item">Nothing yet. Read the rooms. The house wrote it down.</div>';
+  }
+
+  _cullLights() {
+    const p = this.player ? this.player.pos : this.camera.position;
+    const budget = this.settings.quality === 'high' ? 9 : this.settings.quality === 'medium' ? 6 : 4;
+    const ranked = this.level.lights.map((L) => {
+      const lp = L.light.position;
+      const dx = lp.x - p.x, dy = lp.y - p.y, dz = lp.z - p.z;
+      const keep = L.id === 'fire' || L.id === 'furnace';
+      return { L, d2: dx * dx + dy * dy + dz * dz, keep };
+    });
+    ranked.sort((a, b) => a.d2 - b.d2);
+    let used = 0;
+    for (let i = 0; i < ranked.length; i++) {
+      const row = ranked[i];
+      const near = used < budget && row.d2 < 170;
+      row.L.light.visible = row.keep || near;
+      if (near) used++;
+    }
+    if (this.player && this.player.lantern) this.player.lantern.visible = this.mode === 'play' && this.player.lanternOn && this.player.lanternH > 0.1;
   }
 
   _resize() {
@@ -454,6 +512,7 @@ game.boot().then(() => {
         zone: game.story?.zone,
         pos: game.player ? { x: game.player.pos.x, y: game.player.pos.y, z: game.player.pos.z } : null,
         yaw: game.player?.yaw,
+        pitch: game.player?.pitch,
         frags: { ...game.story?.fragments },
         damper: !!game.story?.hasDamper,
         known: [...(game.story?.known || [])],
@@ -466,6 +525,8 @@ game.boot().then(() => {
       game.player.pos.set(x, y, z);
       game.player.yaw = yaw;
       game.player.pitch = pitch;
+      game.player._yawS = yaw;
+      game.player._pitchS = pitch;
       game.player.vel.set(0, 0, 0);
       game.player.cam.position.set(x, y + game.player.eye, z);
       game.player.cam.rotation.order = 'YXZ';
@@ -529,61 +590,104 @@ async function runTour(am) {
     const t0 = performance.now();
     while (performance.now() - t0 < ms) { fn(); await sleep(32); }
   };
+  const ease = (t) => t * t * (3 - 2 * t);
+  const glide = async (x, y, z, yaw, pitch, ms) => {
+    const st = am.state();
+    const p0 = st.pos || { x: 0, y: 0, z: 10 };
+    const y0 = st.yaw || 0;
+    const p1 = st.pitch || 0;
+    const t0 = performance.now();
+    while (true) {
+      const u = Math.min(1, (performance.now() - t0) / ms);
+      const s = ease(u);
+      am.go(
+        p0.x + (x - p0.x) * s,
+        p0.y + (y - p0.y) * s,
+        p0.z + (z - p0.z) * s,
+        y0 + (yaw - y0) * s,
+        p1 + (pitch - p1) * s,
+      );
+      if (u >= 1) break;
+      await sleep(24);
+    }
+  };
   try {
     am.start();
-    await sleep(2200);
-    // Let intro play a bit from outside
-    await sleep(5500);
-    am.skipIntro();
+    // Full slow intro — do not skip. Let the house introduce itself.
+    await sleep(49000);
     am.unlockInput();
     am.lantern(true);
     am.openDoor('front', true);
-    await sleep(400);
+    await sleep(800);
 
-    const beats = [
-      [0.05, 0.02, 10.5, 0, 0.05, 1800],
-      [0.05, 0.02, 7.2, 0, -0.08, 1600],
-      [-0.35, 0.02, 4.4, 0, -0.02, 1400],
-      [-0.2, 0.02, 3.4, Math.PI, 0.05, 1200],
-      [-3.2, 0.02, 2.9, Math.PI * 0.5, 0.05, 1600],
-      [-3.5, 0.02, 2.5, Math.PI * 0.55, 0.1, 1400],
-      [3.4, 0.02, 3.1, -1.1, 0.08, 1600],
-      [-3.4, 0.02, -1.7, 0, 0.05, 1400],
-      [0.94, 0.1, 4.2, 0, 0.35, 1200],
-      [0.94, 1.4, 2.4, 0, 0.2, 1400],
-      [-0.3, 2.82, 2.2, Math.PI, 0.1, 1400],
-      [-3.5, 2.82, 2.5, Math.PI * 0.5, 0.05, 1400],
-      [3.6, 2.82, 2.6, -1.0, 0.05, 1400],
-      [2.2, 0.02, -2.4, 0, 0.25, 1200],
-      [2.2, -2.4, -1.0, Math.PI, 0.1, 1400],
-      [-2.1, -2.7, 0.2, Math.PI * 0.5, 0.15, 1600],
-      [-3.2, 0.02, 2.85, Math.PI * 0.5, 0.08, 1600],
-    ];
-    for (const [x, y, z, yaw, pitch, wait] of beats) {
-      am.go(x, y, z, yaw, pitch);
-      await sleep(wait);
-    }
-    // Interactables + voice + win
-    am.go(-3.4, 0.02, 2.75, Math.PI * 0.5, 0.1);
+    await glide(0.05, 0.02, 11.2, 0, 0.08, 2800);
+    await sleep(900);
+    await glide(0.05, 0.02, 8.4, 0, 0.04, 2600);
+    await sleep(700);
+    await glide(0.05, 0.02, 6.9, 0, -0.06, 2200);
+    am.useId('number');
+    await sleep(1800);
+    await glide(-0.2, 0.02, 5.4, 0, -0.02, 2200);
+    await sleep(600);
+    await glide(-0.42, 0.02, 4.22, 0.15, 0.02, 2000);
+    am.useId('clock');
+    await sleep(2200);
+    await glide(-0.42, 0.02, 4.6, 0.4, 0.08, 1400);
+    am.useId('coat');
+    await sleep(2000);
+    am.openDoor('parlor', true);
+    await glide(-2.1, 0.02, 3.1, Math.PI * 0.52, 0.04, 2800);
+    await sleep(700);
+    await glide(-3.15, 0.02, 2.85, Math.PI * 0.55, 0.12, 2200);
     am.useId('photo');
-    await sleep(1200);
-    am.go(3.55, 0.02, 3.15, 0, 0.2);
+    await sleep(2600);
+    await glide(-3.3, 0.02, 2.5, 0.2, 0.1, 1800);
+    am.useId('radio');
+    await sleep(1800);
+    await glide(-3.2, 0.02, 2.9, Math.PI * 0.5, 0.18, 1400);
+    am.useId('grate');
+    await sleep(2000);
+    am.openDoor('kitchen', true);
+    await glide(3.4, 0.02, 3.15, -1.05, 0.08, 3200);
+    await sleep(600);
     am.useId('letter');
-    await sleep(1000);
-    am.go(3.9, 2.82, 3.0, -0.4, 0.1);
+    await sleep(2200);
+    await glide(4.7, 0.02, 2.6, -1.4, 0.15, 1600);
+    am.useId('Kitchen drawer');
+    await sleep(1800);
+    am.openDoor('dining', true);
+    await glide(-3.5, 0.02, -1.75, 0, 0.08, 2800);
+    am.useId('table');
+    await sleep(1800);
+    await glide(0.94, 0.08, 4.35, 0, 0.38, 2400);
+    await sleep(400);
+    await glide(0.94, 1.35, 2.6, 0, 0.18, 2800);
+    await sleep(500);
+    await glide(-0.3, 2.82, 2.2, Math.PI, 0.08, 2400);
+    am.useId('landing');
+    await sleep(1600);
+    am.openDoor('master', true);
+    await glide(-3.5, 2.82, 2.5, Math.PI * 0.5, 0.05, 2400);
+    am.useId('wardrobe');
+    await sleep(1800);
     am.openDoor('child', true);
+    await glide(3.6, 2.82, 2.6, -1.0, 0.05, 2600);
     am.useId('drawing');
-    await sleep(1000);
-    am.go(-2.15, -2.6, 0.2, 0, 0.2);
+    await sleep(2400);
+    await glide(2.2, 0.08, -2.5, 0.1, 0.28, 2800);
+    await sleep(400);
+    await glide(2.2, -2.4, -1.0, Math.PI, 0.08, 2600);
+    await sleep(500);
+    await glide(-2.15, -2.6, 0.2, Math.PI * 0.15, 0.18, 2400);
     am.useId('damper');
-    await sleep(1000);
+    await sleep(2000);
     am.learnAll();
     am.takeDamper();
-    am.go(-3.1, 0.02, 2.85, Math.PI * 0.55, 0.15);
-    await sleep(600);
+    await glide(-3.15, 0.02, 2.85, Math.PI * 0.55, 0.12, 3200);
+    await sleep(900);
     am.whisperMaren();
-    await hold(2200, () => am.whisperMaren());
-    await sleep(3500);
+    await hold(2800, () => am.whisperMaren());
+    await sleep(4200);
   } catch (e) {
     console.error('tour failed', e);
   }

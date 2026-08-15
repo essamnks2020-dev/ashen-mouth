@@ -3,7 +3,7 @@ import { H, CELLAR_Y, X0, PW, PE, PZ, Z1, GRATE, PARLOR_LAMP } from './plan.js';
 import {
   box, cyl, rug, chair, table, sofa, armchair, bed, nightstand, lamp, wardrobe,
   sideboard, clock, coatRack, makeDrawer, makeCupboard, kitchenRun, stove, fridge,
-  ceilingLamp, picture, switchPlate,
+  ceilingLamp, picture, switchPlate, piano, radio, rocker,
 } from './kit.js';
 
 export function dressAll(ctx, quality) {
@@ -25,17 +25,23 @@ function dressFoyer(ctx) {
   ctx.interact.push({
     kind: 'note', id: 'clock', title: 'Grandfather clock',
     pos: new THREE.Vector3(PW + 0.38, 1.4, 4.55), reach: 1.6,
-    body: 'It still keeps her time. The pendulum never learned to hurry. A paper wedge in the case says: hush when the house is listening.',
+    body: 'Still her time. The pendulum never learned to hurry. A paper wedge in the case: hush when the house is listening.',
   });
   coatRack(ctx, PW + 0.42, 0, 4.95);
   ctx.interact.push({
     kind: 'note', id: 'coat', title: 'Her coat',
     pos: new THREE.Vector3(PW + 0.42, 1.25, 4.95), reach: 1.5,
-    body: 'Wool still holding rain from a night she never came back from the parlor. The pocket has a house key and a burnt match.',
+    body: 'Wool still holding rain from a night she never came back from the parlor. Pocket: a house key, a burnt match.',
   });
   picture(ctx, 0, 1.85, PZ + 0.12, 0.46, 0.36, 'n', ctx.mats.portrait);
-  switchPlate(ctx, 0.62, 1.15, Z1 - 0.2, 's');
-  switchPlate(ctx, PW + 0.12, 1.15, 3.35, 'w');
+  switchPlate(ctx, 0.62, 1.15, Z1 - 0.2, 's', 'foyer');
+  switchPlate(ctx, PW + 0.12, 1.15, 3.35, 'w', 'foyer');
+  box(ctx, ctx.mats.woodDark, PE - 0.38, 0.55, 4.85, 0.42, 1.1, 0.28, { collide: true });
+  ctx.interact.push({
+    kind: 'note', id: 'letters', title: 'Hall table',
+    pos: new THREE.Vector3(PE - 0.38, 1.0, 4.85), reach: 1.5,
+    body: 'Unopened post. A buyer\'s note on top: flue to be checked. Do not occupy overnight.',
+  });
 }
 
 function dressParlor(ctx, quality) {
@@ -75,13 +81,16 @@ function dressParlor(ctx, quality) {
 
   sofa(ctx, -3.35, 0, 1.35, 0);
   armchair(ctx, -2.15, 0, 3.55, -0.9);
+  rocker(ctx, -4.55, 0, 1.55, 0.4);
   table(ctx, -3.35, 0, 2.45, 0.85, 0.5, 0);
+  radio(ctx, -3.15, 0.88, 2.45);
   lamp(ctx, PARLOR_LAMP.x, 0, PARLOR_LAMP.z, 'parlor', 1.45);
   ceilingLamp(ctx, -3.5, 2.62, 2.7, { id: 'parlor-ceil', base: 2.05, dist: 9 });
-  makeCupboard(ctx, X0 + 0.48, 1.0, 4.55, 0.4, 1.28, 0.48, 'left',
-    'Parlor cupboard', 'Hymnals and a box of matches. The wood smells of smoke.');
+  switchPlate(ctx, PW - 0.12, 1.15, 3.5, 'e', 'parlor-ceil');
+  piano(ctx, -4.55, 0, 4.05, 0);
+  makeCupboard(ctx, X0 + 0.48, 1.0, 4.85, 0.4, 1.28, 0.48, 'left',
+    'Parlor cupboard', 'Hymnals and a box of matches. The wood still smells of smoke.');
   picture(ctx, -3.5, 1.75, Z1 - 0.2, 0.55, 0.42, 's', ctx.mats.portrait);
-  box(ctx, ctx.mats.woodDark, -4.55, 0.55, 4.55, 0.55, 1.1, 0.28, { collide: true });
 
   if (quality !== 'low') {
     const shaft = new THREE.Mesh(
@@ -119,12 +128,12 @@ function dressKitchen(ctx) {
   ctx.interact.push({
     kind: 'note', id: 'tap', title: 'Kitchen tap',
     pos: new THREE.Vector3(4.9, 1.1, 3.35), reach: 1.5,
-    body: 'It has dripped since the funeral. She said a house should not be silent. She was wrong about why.',
+    body: 'It has dripped since the funeral. She said a house should not be silent. She was wrong about the reason.',
   });
 
   makeDrawer(ctx, 5.22, 0.52, 2.45, 0.5, 0.16, 0.42, 'x',
     'Kitchen drawer',
-    'Twine, a burnt matchbox, and a list: milk, tape, hush-word. The first syllable is written twice. MA.',
+    'Twine, a burnt matchbox, and a list: milk, tape, hush-word. The first syllable written twice. MA.',
     'ma');
   makeCupboard(ctx, 5.28, 1.82, 2.55, 0.32, 0.62, 0.34, 'left',
     'Wall cupboard', 'Plates stacked facing the wall. She stopped setting a fourth.');
@@ -146,10 +155,7 @@ function dressKitchen(ctx) {
   ctx.lights.push({ light: pend, base: 1.55, flicker: 0.035, id: 'kitchen', toggle: true, on: true });
   cyl(ctx, ctx.mats.lampShade, 3.7, 2.48, 2.8, 0.08, 0.28, 0.1, { rotX: Math.PI / 2, cast: false });
   ceilingLamp(ctx, 4.4, 2.62, 0.2, { id: 'kitchen-2', base: 1.25, color: 0xfff2c8, dist: 7 });
-  ctx.interact.push({
-    kind: 'light', id: 'kitchen-light', title: 'Kitchen light',
-    pos: new THREE.Vector3(3.7, 1.5, 2.8), reach: 1.8, lightId: 'kitchen',
-  });
+  switchPlate(ctx, 3.2, 1.15, Z1 - 0.18, 's', 'kitchen');
 }
 
 function dressDining(ctx) {
@@ -165,10 +171,11 @@ function dressDining(ctx) {
   ceilingLamp(ctx, -3.5, 2.62, -1.8, { id: 'dining', base: 1.7, dist: 7.5 });
   sideboard(ctx, -3.5, 0, -4.15, 1.7);
   picture(ctx, -3.5, 1.7, -4.42, 0.7, 0.45, 'n', ctx.mats.portrait);
+  switchPlate(ctx, PW - 0.12, 1.15, -1.6, 'e', 'dining');
   ctx.interact.push({
     kind: 'note', id: 'table', title: 'Dining table',
     pos: new THREE.Vector3(-3.5, 0.7, -1.85), reach: 1.55,
-    body: 'Four chairs. Three places set. Dust on the fourth. She ate facing the parlor door.',
+    body: 'Four chairs. Three places set. Dust on the fourth. She ate facing the parlor door, as if she could hear him through it.',
   });
 }
 
@@ -183,11 +190,11 @@ function dressLanding(ctx) {
   cyl(ctx, ctx.mats.brass, PW + 0.18, y + 1.5, 3.1, 0.04, 0.04, 0.08, { cast: false });
   cyl(ctx, ctx.mats.lampShade, PW + 0.28, y + 1.48, 3.1, 0.08, 0.05, 0.1, { cast: false });
   picture(ctx, 0, y + 1.5, -0.15, 0.48, 0.36, 'n', ctx.mats.portrait);
-  switchPlate(ctx, PW + 0.12, y + 1.15, 3.4, 'w');
+  switchPlate(ctx, PW + 0.12, y + 1.15, 3.4, 'w', 'landing');
   ctx.interact.push({
     kind: 'note', id: 'landing', title: 'Landing',
     pos: new THREE.Vector3(-0.2, y + 1.2, 2.2), reach: 1.45,
-    body: 'From here the parlor chimney sounds like breathing. She used to wait on this step until you were quiet.',
+    body: 'From here the parlor chimney sounds like breathing. She used to wait on this step until you were quiet enough to come up.',
   });
 }
 
@@ -205,7 +212,7 @@ function dressMaster(ctx) {
   ctx.interact.push({
     kind: 'note', id: 'wardrobe', title: 'Wardrobe',
     pos: new THREE.Vector3(X0 + 0.7, y + 1.2, 4.35), reach: 1.6,
-    body: 'Dresses facing inward. A note pinned to a sleeve: if you must speak, do it like a child who is already sorry.',
+    body: 'Dresses facing inward. A note on a sleeve: if you must speak, do it like a child who is already sorry.',
   });
   ctx.interact.push({
     kind: 'light', id: 'master-lamp', title: 'Bedside lamp',
@@ -224,7 +231,7 @@ function dressChild(ctx) {
   ctx.interact.push({
     kind: 'note', id: 'drawing', title: 'A drawing',
     pos: new THREE.Vector3(PE + 0.35, y + 1.35, 3.2), reach: 1.6, frag: 'ren',
-    body: 'A house with a red mouth. Under it, in crayon: REN. The last of her name. You wrote it when you still thought the grate was a face.',
+    body: 'A house with a red mouth. Under it, in crayon: REN. The last of her name. You wrote it when you still thought the grate was a face that could be kind.',
   });
   const cLamp = new THREE.PointLight(0xffe0b8, 1.0, 6.5, 1.6);
   cLamp.position.set(3.4, y + 1.55, 3.0);
@@ -258,7 +265,7 @@ function dressCellar(ctx) {
   ctx.interact.push({
     kind: 'note', id: 'coal', title: 'Coal scuttle',
     pos: new THREE.Vector3(-1.05, y + 0.45, 0.35), reach: 1.5,
-    body: 'Tape spools, blackened. He recorded every dinner. She fed them to the house one reel at a time.',
+    body: 'Tape spools, blackened. He recorded every dinner. She fed them to the house one reel at a time, and then the house knew the shape of his voice.',
   });
   box(ctx, ctx.mats.wood, 3.4, y + 0.85, -1.4, 0.38, 1.7, 1.5, { collide: true });
   box(ctx, ctx.mats.iron, -0.8, y + 0.35, 0.5, 0.55, 0.4, 0.4, { collide: false });
