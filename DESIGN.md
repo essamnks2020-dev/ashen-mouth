@@ -1,10 +1,11 @@
-# ASHEN MOUTH — design card
+# TEMPER — design card
 
-**ASHEN MOUTH** is a playable first-person horror piece set in a specific house: **14 Ashen Lane**, the Holloway house, the night before it is sold. After the father died, the mother burned his voice recordings in the parlor grate. The fireplace learned to listen. It is the house’s mouth.
+**TEMPER** is a message-cooling forge. You paste the text you are about to send — the angry reply, the breakup paragraph, the midnight Slack roast — and the app measures its heat. Hot words glow. Absolutes flare. You do not get a lecture. You get a ritual: quench, rewrite, breathe, wait. When the metal is ready, you copy it. The meaning stays. The scorch does not.
 
-**What makes it different:** stealth is silence, not darkness. Your microphone is both threat and key — whisper versus shout matters. Find the hush-name **MAREN** (notes in kitchen, nursery, parlor) and the damper in the cellar. Whisper it at the grate to close the flue. Shouting is how the Listener finds you. The Listener is a woman-shaped figure in a housecoat whose head is an iron grate.
+**The genuine problem:** regret texts destroy trust faster than almost anything else online. Undo-send is too late. “Ask ChatGPT to rewrite this” is generic, preachy, and skips the *embodied pause* that actually changes what you mean. Existing tools optimize for speed. TEMPER sells intentional friction.
 
-**Live:** https://essamnks2020-dev.github.io/ashen-mouth/  
-**Status:** playable first-person listening-horror. Yard, porch, boarded windows, connected rooms, ramp stairs, readable night lighting, slow intro, furniture you can use (doors, drawers, switches, piano, radio, grate). Mic + V/B/N. Win by whispering MAREN at the grate with the damper.
+**What makes it different:** metallurgy as interface. Heat is visible at the word level. Cooling is physical (hold to quench, tap to anneal a word, optional breath into the mic). History is a vault of cooled plaques, not a chat log. Insights read like a smith’s notes (“you run hottest after 11pm”), never like a wellness guilt dashboard.
 
-Replaces THE KEEPER in the portfolio. Not named THE KEEPER or HOLLOWMERE.
+**Status:** playable local-first web app. Free tier is the full forge. Pro framing is documented for monetization (unlimited vault sync, pattern depth, shared tempering later).
+
+**Portfolio role:** utility product with a strong mechanical identity — sits beside ASHEN MOUTH (listening-horror) as proof of interaction craft beyond games.

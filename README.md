@@ -1,12 +1,10 @@
-# ASHEN MOUTH
+# TEMPER
 
-A first-person listening-horror game in the browser. You return to **14 Ashen Lane**
-the night before the house is sold. Your mother burned your father’s recordings
-in the parlor grate. The house learned to listen. The grate is its mouth.
+**Cool the message before you send it.**
 
-Silence is stealth. Your microphone is the threat and the tool.
+TEMPER is a local-first message forge. Paste the text you’re about to fire off — the angry reply, the breakup paragraph, the midnight Slack roast. Hot words glow. Absolutes flare. You quench, anneal, and breathe the heat down. When the plate is tempered, you copy it. Meaning stays. Scorch doesn’t.
 
-> **Play online:** https://essamnks2020-dev.github.io/ashen-mouth/
+> Not another AI rewrite chatbot. Intentional friction with a metallurgy interface.
 
 ---
 
@@ -15,56 +13,54 @@ Silence is stealth. Your microphone is the threat and the tool.
 Must be served over `http://` — browsers will not load ES modules from disk.
 
 ```bash
-node serve.mjs                 # then open http://localhost:5173
+node serve.mjs                 # http://localhost:5173
 ```
 
 ```bash
-python -m http.server 5173
+npm run dev
 ```
 
-Nothing to install. `npm install` is not required — three.js is vendored.
-
-**Requires WebGL2.** If it runs rough, drop to MEDIUM or LOW in Settings.
+Nothing to install. No accounts. No backend. Your words stay in `localStorage` on this device.
 
 ---
 
-## How to play
+## How to use
 
-| Input | Action |
+| Move | What it does |
 | --- | --- |
-| `W A S D` | Move |
-| `SHIFT` | Slow walk (quieter) |
-| `CTRL` / `C` | Crouch |
-| `E` | Inspect / door / light / note |
-| `F` | Flashlight |
-| `T` | Known words |
-| `V` / `B` / `N` | Whisper / speak / shout (if mic is off) |
-| `1–9` | Whisper a known word (with T open) |
-| `ESC` | Pause |
-| Click | Lock mouse |
+| Paste / type | Live heat score + glowing hot words |
+| Tap a glowing word | Anneal it — pick a cooler phrase |
+| Hold **Quench** | Dunk the whole plate; steam + hiss; heat falls |
+| **Breath** (optional) | Blow toward the mic to cool |
+| **Copy tempered** | Unlocks under the heat threshold |
+| **Seal in vault** | Saves a cooled plaque locally |
+| **Patterns** | Smith’s notes from your vault |
 
-Read the house. Find **MA** (kitchen), **REN** (nursery), **MAREN** (parlor photograph),
-and the **damper** in the cellar. Carry them to the parlor grate. Whisper **MAREN**.
-Do not shout your own name.
+Try the molten samples on the enter screen if you want a fast demo.
 
-The Listener does not hunt by sight. Hiding in the dark does nothing. Making noise
-does everything.
+---
+
+## Product docs
+
+- `DESIGN.md` — design card
+- Case study is also in-app under **Case study**
+- `AGENTS.md` — notes for Cursor Cloud agents
 
 ---
 
 ## Architecture
 
 ```
-index.html              importmap + HUD / menus
-serve.mjs               tiny static server
-vendor/three/           three.js r185
+index.html          shell + screens
+serve.mjs           tiny static server
 src/
-  main.js               boot, loop, screens
-  core/                 input, audio, voice, post
-  world/                collision, materials, house plan / kit / rooms / exterior
-  game/                 player, listener, story, life
-  ui/                   house CSS
+  main.js           navigation, forge UX
+  heat.js           on-device heat lexicon + structure
+  forge.js          canvas atmosphere (embers, steam, thermometer)
+  audio.js          procedural quench / ting / drone
+  breath.js         optional mic RMS cooling
+  vault.js          localStorage plaques + patterns
+  ui/styles.css     charcoal / molten / quench visual system
 ```
 
-MIT — see LICENSE. Bundles three.js (MIT). All rooms, the Listener, and systems
-are original.
+MIT — see LICENSE.

@@ -1,7 +1,7 @@
 {
-  "name": "ashen-mouth",
+  "name": "temper",
   "version": "1.0.0",
-  "description": "ASHEN MOUTH — a listening-horror game. Silence is stealth. Your voice is the threat.",
+  "description": "TEMPER — cool the message before you send it. A forge for heated words.",
   "type": "module",
   "main": "index.html",
   "scripts": {

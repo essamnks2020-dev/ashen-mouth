@@ -4,5 +4,4 @@ node_modules/
 *.log
 .vscode/
 .idea/
-qa-*.png
 package-lock.json
