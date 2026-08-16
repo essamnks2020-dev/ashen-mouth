@@ -65,7 +65,12 @@ export function buildHouse(scene, world, mats, quality) {
   stairs(ctx, { x: MAIN_STAIR.x, w: MAIN_STAIR.w, yLow: 0, yHigh: H, zBot: MAIN_STAIR.zBot, dirZ: MAIN_STAIR.dirZ });
   stairs(ctx, { x: CELLAR_STAIR.x, w: CELLAR_STAIR.w, yLow: CELLAR_Y, yHigh: 0, zBot: CELLAR_STAIR.zLow, dirZ: CELLAR_STAIR.dirZ });
 
+  // Landing rails — both sides of the main stair hole
   rail(ctx, MAIN_STAIR.x - MAIN_STAIR.w * 0.5 - 0.05, H, MAIN_STAIR.zTop + 0.2, MAIN_STAIR.zBot - 0.15, 0.9);
+  rail(ctx, MAIN_STAIR.x + MAIN_STAIR.w * 0.5 + 0.05, H, MAIN_STAIR.zTop + 0.2, MAIN_STAIR.zBot - 0.15, 0.9);
+  // Cellar hole rails in the kitchen — intentional descent, not a floor trap
+  rail(ctx, CELLAR_STAIR.x - CELLAR_STAIR.w * 0.5 - 0.06, 0, CELLAR_STAIR.zLow - 0.05, CELLAR_STAIR.zHigh + 0.05, 0.88);
+  rail(ctx, CELLAR_STAIR.x + CELLAR_STAIR.w * 0.5 + 0.06, 0, CELLAR_STAIR.zLow - 0.05, CELLAR_STAIR.zHigh + 0.05, 0.88);
 
   for (const w of WINDOWS) {
     const spec = { ...w };
@@ -83,10 +88,10 @@ export function buildHouse(scene, world, mats, quality) {
   const doors = [];
   doors.push(makeDoor(ctx, 0, 0, zi1, 0, 'front', 'Front door', true, 1, { transom: true, front: true }));
   doors.push(makeDoor(ctx, PW, 0, 2.75, Math.PI / 2, 'parlor', 'Parlor door', false, -1));
-  doors.push(makeDoor(ctx, PE, 0, 2.75, -Math.PI / 2, 'kitchen', 'Kitchen door', false, 1));
+  doors.push(makeDoor(ctx, PE, 0, 2.75, -Math.PI / 2, 'kitchen', 'Kitchen door (hall)', false, 1));
   doors.push(makeDoor(ctx, -3.42, 0, PZ, 0, 'dining', 'Dining door', false, 1));
   doors.push(makeDoor(ctx, PW, 0, -1.70, Math.PI / 2, 'hallDining', 'Hall door', false, -1));
-  doors.push(makeDoor(ctx, PE, 0, -1.70, -Math.PI / 2, 'kitchenBack', 'Kitchen door', false, 1));
+  doors.push(makeDoor(ctx, PE, 0, -1.70, -Math.PI / 2, 'kitchenBack', 'Kitchen door (dining)', false, 1));
   doors.push(makeDoor(ctx, PW, H, 2.55, Math.PI / 2, 'master', 'Bedroom door', false, -1));
   doors.push(makeDoor(ctx, PE, H, 2.55, -Math.PI / 2, 'child', 'Nursery door', false, 1));
 

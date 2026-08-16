@@ -1,8 +1,9 @@
 {
-  "name": "essam-portfolio",
+  "name": "ashen-mouth",
   "version": "1.0.0",
-  "description": "Portfolio — Homeport + ASHEN MOUTH + TEMPER",
+  "description": "ASHEN MOUTH — a listening-horror game. Silence is stealth. Your voice is the threat.",
   "type": "module",
+  "main": "index.html",
   "scripts": {
     "start": "node serve.mjs",
     "dev": "node serve.mjs"

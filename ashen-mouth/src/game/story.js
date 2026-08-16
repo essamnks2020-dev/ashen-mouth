@@ -114,9 +114,14 @@ export class Story {
       this.bindT += dt;
       listener.state = 'listen';
       fx.pin = 0.6;
+      // Close the damper as the whisper takes
+      if (level.grate?.userData) {
+        level.grate.userData.damperOpen = Math.max(0, 1 - this.bindT / 1.6);
+      }
       if (this.bindT > 1.6) {
         this.end = 'bind';
         this.endT = 0;
+        if (level.grate?.userData) level.grate.userData.damperOpen = 0;
         audio?.bindChime?.();
       }
     } else this.bindT = Math.max(0, this.bindT - dt);

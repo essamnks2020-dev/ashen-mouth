@@ -38,7 +38,7 @@ export const WIN_W = 1.10;
 
 export const RISERS = 16;
 export const RISE = H / RISERS;
-export const TREADS = 15;
+export const TREADS = 16; // match risers so top tread meets the landing floor
 export const RUN = 0.26;
 
 export const MAIN_STAIR = {
@@ -72,6 +72,8 @@ export const HOLE_CELLAR = {
 };
 
 export const GRATE = { x: X0 + 0.42, y: 0.62, z: 2.72 };
+/** Roof / flue stack sits above the parlor grate — shared with exterior + parlor breast */
+export const CHIMNEY = { x: GRATE.x + 0.35, z: GRATE.z };
 export const PARLOR_LAMP = { x: -3.05, y: 1.18, z: 4.38 };
 
 export const SPAWN = { x: -0.42, y: 0.02, z: 4.22, yaw: 0 };
