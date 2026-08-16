@@ -421,16 +421,32 @@ window.addEventListener('keyup', (e) => {
 
 els.btnCopy.addEventListener('click', async () => {
   if (els.btnCopy.disabled) return;
+  let ok = false;
   try {
-    await navigator.clipboard.writeText(state.text);
-    copyChime();
-    toast('Tempered text copied');
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(state.text);
+      ok = true;
+    }
   } catch {
-    // fallback
-    els.message.select();
-    document.execCommand('copy');
+    ok = false;
+  }
+  if (!ok) {
+    const ta = els.message;
+    ta.focus();
+    ta.select();
+    try {
+      ok = document.execCommand('copy');
+    } catch {
+      ok = false;
+    }
+    // collapse selection
+    window.getSelection()?.removeAllRanges();
+  }
+  if (ok) {
     copyChime();
     toast('Tempered text copied');
+  } else {
+    toast('Select the text and copy manually');
   }
 });
 
