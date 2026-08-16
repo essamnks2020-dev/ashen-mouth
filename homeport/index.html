@@ -3,9 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
-  <meta name="description" content="Homeport — fishing logbook on the fisherman's side. Profit, docks, quota." />
-  <meta name="theme-color" content="#061018" />
+  <meta name="description" content="Homeport — fishing logbook on the fisherman's side. Profit after fuel & crew. Dock prices. Quota warnings." />
+  <meta name="theme-color" content="#040c12" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Homeport</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,19 +26,22 @@
       </div>
 
       <div id="app">
-        <!-- WAKE -->
+        <div class="flash-land" id="flash" aria-hidden="true"></div>
+
         <section id="screen-wake" class="screen active" data-screen="wake">
-          <div class="tide-mark" aria-hidden="true"><b>TIDE</b></div>
+          <div class="compass" aria-hidden="true"><b>N</b></div>
           <h1 class="wake-brand">Home<span>port</span></h1>
           <p class="wake-line">Built for the boat — not the binder.</p>
           <p class="wake-sub">
             Log the haul. See profit after fuel and crew.
             Watch quota before you’re near the cap. Compare docks while you still have a choice.
           </p>
-          <button type="button" class="btn btn-primary btn-block" id="btn-enter">Open the log</button>
+          <div class="wake-actions">
+            <button type="button" class="btn btn-primary btn-block" id="btn-enter">Open the log</button>
+            <button type="button" class="btn btn-ghost btn-block" id="btn-demo-land">Land a demo trip</button>
+          </div>
         </section>
 
-        <!-- BRIDGE -->
         <section id="screen-bridge" class="screen" data-screen="bridge">
           <div class="bar">
             <div class="mark">Home<em>port</em></div>
@@ -54,6 +58,11 @@
               </div>
             </div>
 
+            <div class="goal" id="season-goal">
+              <div class="top"><span>Season goal</span><span id="goal-label">$0 / $45k</span></div>
+              <div class="track"><div class="fill" id="goal-fill"></div></div>
+            </div>
+
             <div id="quota-alert"></div>
 
             <p class="section-label">Quota pressure</p>
@@ -64,29 +73,25 @@
           </div>
         </section>
 
-        <!-- NEW TRIP -->
         <section id="screen-trip" class="screen" data-screen="trip">
           <div class="bar">
             <button type="button" class="icon-btn" data-back="bridge">←</button>
             <div class="mark">New trip</div>
-            <span style="width:2.2rem"></span>
+            <button type="button" class="icon-btn" id="btn-suggest-name" title="Suggest name">✧</button>
           </div>
-          <div class="stepper" id="trip-steps">
-            <span class="on"></span><span></span><span></span>
-          </div>
+          <div class="stepper" id="trip-steps"><span class="on"></span><span></span><span></span></div>
           <div class="scroll" id="trip-form"></div>
         </section>
 
-        <!-- DOCKS -->
         <section id="screen-docks" class="screen" data-screen="docks">
           <div class="bar">
             <div class="mark">Dock <em>prices</em></div>
             <button type="button" class="icon-btn" id="btn-refresh-prices" title="Refresh">↻</button>
           </div>
           <div class="scroll">
-            <p class="section-label" id="price-species-label">Best price by dock</p>
+            <p class="section-label">Where the haul pays</p>
             <div class="field">
-              <label for="price-species">Species</label>
+              <label for="price-species">Species board</label>
               <select id="price-species"></select>
             </div>
             <div id="price-alert"></div>
@@ -94,21 +99,22 @@
               <thead><tr><th>Dock</th><th>$/lb</th><th></th></tr></thead>
               <tbody id="price-body"></tbody>
             </table>
-            <p class="section-label" style="margin-top:1.25rem">Why this board exists</p>
-            <p style="color:var(--mute);font-size:0.9rem;line-height:1.5;margin:0">
-              Compliance apps tell the government what you caught.
-              Homeport tells you where that catch is worth the most — before you burn fuel to the wrong pier.
+
+            <p class="section-label" style="margin-top:1.35rem">If you steam the last haul</p>
+            <p style="color:var(--mute);font-size:0.82rem;margin:0 0 0.6rem;line-height:1.4">
+              Uses your most recent trip’s species mix. Steam burn from home dock counted.
             </p>
+            <div class="scenario" id="scenario-board"></div>
           </div>
         </section>
 
-        <!-- LEDGER / QUOTA -->
         <section id="screen-ledger" class="screen" data-screen="ledger">
           <div class="bar">
             <div class="mark">Ledger</div>
-            <button type="button" class="icon-btn" id="btn-clear-demo" title="Reset demo">↺</button>
+            <button type="button" class="icon-btn" id="btn-clear-demo" title="Reset">↺</button>
           </div>
           <div class="scroll">
+            <div class="stats-row" id="season-stats"></div>
             <p class="section-label">Season quotas</p>
             <div id="quota-full"></div>
             <p class="section-label" style="margin-top:1.2rem">All trips</p>
@@ -116,22 +122,20 @@
           </div>
         </section>
 
-        <!-- TRIP DETAIL -->
         <section id="screen-detail" class="screen" data-screen="detail">
           <div class="bar">
             <button type="button" class="icon-btn" data-back="bridge">←</button>
             <div class="mark">Trip</div>
-            <span style="width:2.2rem"></span>
+            <span style="width:2.25rem"></span>
           </div>
           <div class="scroll" id="detail-body"></div>
         </section>
 
-        <!-- VESSEL SETTINGS -->
         <section id="screen-vessel" class="screen" data-screen="vessel">
           <div class="bar">
             <button type="button" class="icon-btn" data-back="bridge">←</button>
             <div class="mark">Vessel</div>
-            <span style="width:2.2rem"></span>
+            <span style="width:2.25rem"></span>
           </div>
           <div class="scroll" id="vessel-form"></div>
         </section>

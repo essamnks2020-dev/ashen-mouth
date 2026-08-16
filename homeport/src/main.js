@@ -1,8 +1,10 @@
 import { createSea } from './sea.js';
+import { unlockAudio, landChime, tapSoft, warnPulse } from './audio.js';
 import {
   load, save, SPECIES, DOCKS, speciesById, dockById,
   bestDock, calcTrip, formatMoney, formatMoneyExact, uid,
   quotaPressure, applyHaulsToQuota, seedDemoTrip, seedPrices,
+  suggestTripName, scenarioBoard, seasonStats, countUp,
 } from './lib/store.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -14,11 +16,11 @@ let state = seedDemoTrip(load());
 let screen = 'wake';
 let tripStep = 0;
 let detailId = null;
-let draft = () => state.draft || blankDraft();
+const draft = () => state.draft || blankDraft();
 
 function blankDraft() {
   return {
-    name: '',
+    name: suggestTripName(),
     hours: 10,
     landDock: state.vessel.homeDock,
     fuelCost: 350,
@@ -29,16 +31,20 @@ function blankDraft() {
   };
 }
 
-function persist() {
-  save(state);
-}
+function persist() { save(state); }
 
 function toast(msg) {
   const el = $('#toast');
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => el.classList.remove('show'), 2400);
+  toast._t = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function flashLand() {
+  const f = $('#flash');
+  f.classList.add('on');
+  setTimeout(() => f.classList.remove('on'), 500);
 }
 
 function nav(name, { resetTrip = false } = {}) {
@@ -55,13 +61,11 @@ function nav(name, { resetTrip = false } = {}) {
 }
 
 function tickClock() {
-  const d = new Date();
-  $('#clock').textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  $('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 tickClock();
 setInterval(tickClock, 30e3);
 
-// Offline badge — always "offshore" feel; flip if online for honesty
 function syncNet() {
   const online = navigator.onLine;
   $('#net-dot').classList.toggle('off', !online);
@@ -82,9 +86,15 @@ function render() {
 
 function renderBridge() {
   const last = state.trips[0];
+  const stats = seasonStats(state.trips);
+  const goal = state.seasonGoal || 45000;
+  const pct = Math.min(100, (stats.total / goal) * 100);
+  $('#goal-label').textContent = `${formatMoney(stats.total)} / ${formatMoney(goal)}`;
+  $('#goal-fill').style.width = `${pct}%`;
+
   if (last) {
     const m = last.money || calcTrip(last, state.vessel, state.prices);
-    $('#hero-profit').textContent = formatMoney(m.profit);
+    countUp($('#hero-profit'), m.profit);
     $('#hero-trip-name').textContent = last.name || 'Untitled trip';
     $('#hero-per-hour').textContent = m.perHour != null ? `${formatMoney(m.perHour)}/hr` : '—';
     $('#hero-dock').textContent = dockById(last.landDock)?.name || last.landDock;
@@ -95,7 +105,6 @@ function renderBridge() {
     $('#hero-dock').textContent = '—';
   }
 
-  // Quota chips — top 4 by pressure
   const ranked = SPECIES.map((s) => {
     const p = quotaPressure(state.quotas, s.id);
     return { s, p, q: state.quotas[s.id] };
@@ -104,23 +113,21 @@ function renderBridge() {
   $('#quota-row').innerHTML = ranked.map(({ s, p, q }) => {
     const cls = p >= 0.92 ? 'hot' : p >= 0.75 ? 'warn' : '';
     return `<div class="q-chip ${cls}">
-      <div class="sp">${s.name}</div>
+      <div class="sp">${s.icon || ''} ${s.name}</div>
       <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, p * 100)}%"></div></div>
       <div class="nums">${Math.round(q.used)} / ${q.cap} ${s.unit}</div>
     </div>`;
   }).join('');
 
-  // Alert if any hot
   const hot = ranked.find((x) => x.p >= 0.85);
   const box = $('#quota-alert');
   if (hot) {
+    if (hot.p >= 0.9) warnPulse();
     box.innerHTML = `<div class="alert ${hot.p >= 0.95 ? 'hot' : ''}">
       ${hot.s.name} is at ${Math.round(hot.p * 100)}% of quota.
       Land light or you’ll ride the cap.
     </div>`;
-  } else {
-    box.innerHTML = '';
-  }
+  } else box.innerHTML = '';
 
   const list = $('#trip-list');
   if (!state.trips.length) {
@@ -140,10 +147,9 @@ function renderBridge() {
 
 function renderTripForm() {
   const d = draft();
-  const steps = $('#trip-steps');
-  [...steps.children].forEach((el, i) => el.classList.toggle('on', i <= tripStep));
-
+  [...$('#trip-steps').children].forEach((el, i) => el.classList.toggle('on', i <= tripStep));
   const form = $('#trip-form');
+
   if (tripStep === 0) {
     form.innerHTML = `
       <p class="section-label">Depart</p>
@@ -169,16 +175,15 @@ function renderTripForm() {
     form.innerHTML = `
       <p class="section-label">Haul</p>
       ${warnings}
-      <div class="haul-list" id="haul-list">
-        ${d.hauls.map((h, i) => haulRow(h, i)).join('')}
-      </div>
+      <div class="haul-list" id="haul-list">${d.hauls.map((h, i) => haulRow(h, i)).join('')}</div>
       <button type="button" class="btn btn-ghost btn-block" id="f-add-haul" style="margin-bottom:0.75rem">+ Add species</button>
       <div style="display:flex;gap:0.5rem">
         <button type="button" class="btn btn-ghost" id="f-back" style="flex:1">Back</button>
         <button type="button" class="btn btn-primary" id="f-next" style="flex:2">Costs →</button>
       </div>`;
   } else {
-    const preview = calcTrip({ ...d, hauls: d.hauls }, state.vessel, state.prices);
+    const preview = calcTrip({ ...d }, state.vessel, state.prices);
+    const scenarios = scenarioBoard(d.hauls, state.vessel, state.prices).slice(0, 3);
     form.innerHTML = `
       <p class="section-label">Fuel · ice · crew</p>
       <div class="row-2">
@@ -191,8 +196,20 @@ function renderTripForm() {
         <input id="f-other" type="number" min="0" step="1" value="${d.otherCost}" /></div>
       <div class="field"><label>Notes</label>
         <textarea id="f-notes" placeholder="Fog until 0900…">${escapeHtml(d.notes || '')}</textarea></div>
+
+      <p class="section-label">Best docks for this haul</p>
+      <div class="scenario">
+        <div class="row head"><span>Dock</span><span>Profit</span><span>vs home</span></div>
+        ${scenarios.map((r, i) => `
+          <div class="row ${i === 0 ? 'best' : ''}">
+            <span class="dock">${r.dock.name}</span>
+            <span>${formatMoney(r.profit)}</span>
+            <span class="${r.delta >= 0 ? 'pos' : 'neg'}">${r.delta >= 0 ? '+' : ''}${formatMoney(r.delta)}</span>
+          </div>`).join('')}
+      </div>
+
       <div class="breakdown">
-        <div class="line"><span>Gross</span><span>${formatMoneyExact(preview.gross)}</span></div>
+        <div class="line"><span>Gross @ ${dockById(d.landDock)?.name || d.landDock}</span><span>${formatMoneyExact(preview.gross)}</span></div>
         <div class="line"><span>Expenses</span><span class="neg">−${formatMoneyExact(preview.expenses)}</span></div>
         <div class="line"><span>Crew (${Math.round(state.vessel.crewShare * 100)}%)</span><span class="neg">−${formatMoneyExact(preview.crew)}</span></div>
         <div class="line total"><span>Your share</span><span>${formatMoneyExact(preview.profit)}</span></div>
@@ -212,7 +229,7 @@ function haulRow(h, i) {
       </select></div>
     <div class="field" style="margin:0"><label>Weight lb</label>
       <input data-f="weight" type="number" min="1" step="1" value="${h.weight}" /></div>
-    <button type="button" class="rm" data-rm="${i}" ${state.draft?.hauls?.length <= 1 && draft().hauls.length <= 1 ? 'disabled' : ''}>✕</button>
+    <button type="button" class="rm" data-rm="${i}">✕</button>
   </div>`;
 }
 
@@ -237,8 +254,8 @@ function syncDraftFromDom() {
   }
 }
 
-function landTrip() {
-  syncDraftFromDom();
+function landTrip({ skipDomSync = false } = {}) {
+  if (!skipDomSync) syncDraftFromDom();
   const d = draft();
   if (!d.hauls.some((h) => h.weight > 0)) {
     toast('Add at least one haul');
@@ -262,9 +279,31 @@ function landTrip() {
   state.trips.unshift(trip);
   state.draft = null;
   persist();
+  landChime();
+  flashLand();
   toast(`Landed · ${formatMoney(trip.money.profit)} yours`);
   detailId = trip.id;
   nav('detail');
+}
+
+function runDemoLand() {
+  unlockAudio();
+  state.onboarded = true;
+  state.draft = {
+    name: 'Night tow — Stellwagen',
+    hours: 14,
+    landDock: 'newbedford',
+    fuelCost: 510,
+    iceCost: 95,
+    otherCost: 25,
+    hauls: [
+      { species: 'scallop', weight: 240 },
+      { species: 'cod', weight: 160 },
+    ],
+    notes: 'Hard bottom. Price board favored New Bedford.',
+  };
+  tripStep = 2;
+  landTrip({ skipDomSync: true });
 }
 
 function renderDocks() {
@@ -274,21 +313,8 @@ function renderDocks() {
   }
   const sp = sel.value || 'cod';
   const best = bestDock(state.prices, sp);
-  const home = state.prices[state.vessel.homeDock]?.[sp];
-  const rows = DOCKS.map((d) => {
-    const p = state.prices[d.id]?.[sp] ?? 0;
-    const isBest = best && d.id === best.dock.id;
-    return `<tr class="${isBest ? 'best' : ''}">
-      <td class="dock-name">${d.name}<div style="font-size:0.68rem;color:var(--mute);font-family:var(--font-ui)">${d.harbor}</div></td>
-      <td>${p.toFixed(2)}</td>
-      <td>${isBest ? 'BEST' : ''}</td>
-    </tr>`;
-  }).sort((a, b) => {
-    // keep DOM order by price desc — rebuild sorted
-    return 0;
-  });
+  const homePx = state.prices[state.vessel.homeDock]?.[sp];
 
-  // sort by price
   const sorted = [...DOCKS].sort((a, b) =>
     (state.prices[b.id]?.[sp] ?? 0) - (state.prices[a.id]?.[sp] ?? 0));
   $('#price-body').innerHTML = sorted.map((d) => {
@@ -297,29 +323,44 @@ function renderDocks() {
     return `<tr class="${isBest ? 'best' : ''}">
       <td class="dock-name">${d.name}<div style="font-size:0.68rem;color:var(--mute);font-family:var(--font-ui)">${d.harbor}</div></td>
       <td>${p.toFixed(2)}</td>
-      <td style="color:var(--brass);font-size:0.65rem;letter-spacing:0.08em">${isBest ? 'BEST' : ''}</td>
+      <td style="color:var(--brass);font-size:0.62rem;letter-spacing:0.08em">${isBest ? 'BEST' : ''}</td>
     </tr>`;
   }).join('');
 
   const alert = $('#price-alert');
-  if (best && home != null && best.price > home * 1.04 && best.dock.id !== state.vessel.homeDock) {
-    const lift = ((best.price - home) / home * 100).toFixed(0);
+  if (best && homePx != null && best.price > homePx * 1.04 && best.dock.id !== state.vessel.homeDock) {
+    const lift = ((best.price - homePx) / homePx * 100).toFixed(0);
     alert.innerHTML = `<div class="alert ok">
       ${best.dock.name} is paying ~${lift}% more than ${dockById(state.vessel.homeDock)?.name} for ${speciesById(sp)?.name}.
-      Worth the steam if you’re close.
     </div>`;
-  } else {
-    alert.innerHTML = '';
-  }
+  } else alert.innerHTML = '';
+
+  // Scenario from last trip hauls
+  const hauls = state.trips[0]?.hauls || [{ species: 'cod', weight: 200 }];
+  const board = scenarioBoard(hauls, state.vessel, state.prices);
+  $('#scenario-board').innerHTML = `
+    <div class="row head"><span>Dock</span><span>Profit</span><span>vs home</span></div>
+    ${board.map((r, i) => `
+      <div class="row ${i === 0 ? 'best' : ''}">
+        <span class="dock">${r.dock.name}${r.steamHrs ? ` <span style="color:var(--mute);font-weight:400">· ${r.steamHrs.toFixed(1)}h</span>` : ''}</span>
+        <span style="font-family:var(--font-mono)">${formatMoney(r.profit)}</span>
+        <span class="${r.delta >= 0 ? 'pos' : 'neg'}">${r.delta >= 0 ? '+' : ''}${formatMoney(r.delta)}</span>
+      </div>`).join('')}`;
 }
 
 function renderLedger() {
+  const stats = seasonStats(state.trips);
+  $('#season-stats').innerHTML = `
+    <div class="stat"><b>${formatMoney(stats.total)}</b><span>Season</span></div>
+    <div class="stat"><b>${formatMoney(stats.best)}</b><span>Best trip</span></div>
+    <div class="stat"><b>${formatMoney(stats.perHour)}</b><span>$ / hour</span></div>`;
+
   $('#quota-full').innerHTML = SPECIES.map((s) => {
     const q = state.quotas[s.id];
     const p = q.used / q.cap;
     const cls = p >= 0.92 ? 'hot' : p >= 0.75 ? 'warn' : '';
     return `<div class="q-chip ${cls}" style="margin-bottom:0.45rem">
-      <div class="sp">${s.name}</div>
+      <div class="sp">${s.icon} ${s.name}</div>
       <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, p * 100)}%"></div></div>
       <div class="nums">${Math.round(q.used)} / ${q.cap} ${s.unit} · ${Math.round(p * 100)}%</div>
     </div>`;
@@ -330,20 +371,14 @@ function renderLedger() {
     list.innerHTML = `<div class="empty"><h3>No landings yet</h3></div>`;
     return;
   }
-  const season = state.trips.reduce((s, t) => s + (t.money?.profit || 0), 0);
-  list.innerHTML = `
-    <div class="hero-profit" style="margin-bottom:1rem">
-      <p class="label">Season · skipper share</p>
-      <p class="amount" style="font-size:2.4rem">${formatMoney(season)}</p>
-    </div>
-    ${state.trips.map((t) => {
-      const m = t.money || calcTrip(t, state.vessel, state.prices);
-      const when = new Date(t.landedAt || t.departedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-      return `<button type="button" class="trip-card" data-trip="${t.id}">
-        <p class="t-name">${escapeHtml(t.name || 'Trip')}</p>
-        <div class="t-row"><span>${when}</span><span class="t-profit">${formatMoney(m.profit)}</span></div>
-      </button>`;
-    }).join('')}`;
+  list.innerHTML = state.trips.map((t) => {
+    const m = t.money || calcTrip(t, state.vessel, state.prices);
+    const when = new Date(t.landedAt || t.departedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return `<button type="button" class="trip-card" data-trip="${t.id}">
+      <p class="t-name">${escapeHtml(t.name || 'Trip')}</p>
+      <div class="t-row"><span>${when}</span><span class="t-profit">${formatMoney(m.profit)}</span></div>
+    </button>`;
+  }).join('');
 }
 
 function renderDetail() {
@@ -355,13 +390,13 @@ function renderDetail() {
   }
   const m = t.money || calcTrip(t, state.vessel, state.prices);
   body.innerHTML = `
-    <h2 style="font-family:var(--font-display);font-weight:400;font-size:1.7rem;margin:0 0 0.35rem">${escapeHtml(t.name)}</h2>
+    <h2 style="font-family:var(--font-display);font-weight:400;font-size:1.75rem;margin:0 0 0.35rem">${escapeHtml(t.name)}</h2>
     <p style="color:var(--mute);margin:0 0 1rem;font-size:0.88rem">
       ${dockById(t.landDock)?.name || t.landDock} · ${t.hours}h underway
     </p>
     <div class="hero-profit">
       <p class="label">Your share</p>
-      <p class="amount">${formatMoney(m.profit)}</p>
+      <p class="amount" id="detail-profit">${formatMoney(m.profit)}</p>
       <div class="meta">
         <span>${m.perHour != null ? `<strong>${formatMoney(m.perHour)}</strong>/hr` : ''}</span>
         <span>Crew took ${formatMoney(m.crew)}</span>
@@ -382,8 +417,9 @@ function renderDetail() {
       <div class="line total"><span>Skipper</span><span>${formatMoneyExact(m.profit)}</span></div>
     </div>
     ${t.notes ? `<p class="section-label">Notes</p><p style="color:var(--mute);line-height:1.5">${escapeHtml(t.notes)}</p>` : ''}
-    <button type="button" class="btn btn-ghost btn-block" id="btn-delete-trip" style="margin-top:1.25rem;color:var(--signal);border-color:rgba(214,69,61,0.35)">Strike from log</button>
+    <button type="button" class="btn btn-ghost btn-block" id="btn-delete-trip" style="margin-top:1.25rem;color:var(--signal);border-color:rgba(224,74,64,0.35)">Strike from log</button>
   `;
+  countUp($('#detail-profit'), m.profit, { ms: 700 });
 }
 
 function renderVessel() {
@@ -395,49 +431,54 @@ function renderVessel() {
       <select id="v-dock">${DOCKS.map((d) =>
         `<option value="${d.id}" ${d.id === v.homeDock ? 'selected' : ''}>${d.name}, ${d.harbor}</option>`).join('')}
       </select></div>
-    <div class="field"><label>Crew share (${Math.round(v.crewShare * 100)}%)</label>
-      <input id="v-crew" type="range" min="20" max="50" step="1" value="${Math.round(v.crewShare * 100)}" />
-      <p style="color:var(--mute);font-size:0.8rem;margin:0.35rem 0 0">Applied to net after fuel & ice.</p></div>
+    <div class="field"><label>Crew share (<span id="v-crew-label">${Math.round(v.crewShare * 100)}</span>%)</label>
+      <input id="v-crew" type="range" min="20" max="50" step="1" value="${Math.round(v.crewShare * 100)}" /></div>
+    <div class="field"><label>Fuel burn steaming ($/hr)</label>
+      <input id="v-fuel-hr" type="number" min="10" step="1" value="${v.fuelPerHour || 42}" /></div>
+    <div class="field"><label>Season goal $</label>
+      <input id="v-goal" type="number" min="5000" step="1000" value="${state.seasonGoal || 45000}" /></div>
     <button type="button" class="btn btn-primary btn-block" id="v-save">Save vessel</button>
     <p style="color:var(--mute);font-size:0.85rem;line-height:1.5;margin-top:1.5rem">
       Homeport keeps every trip on this device. No account. No cloud bill.
-      Sync later when you’re ready — the log works in fog and dead zones.
+      The log works in fog and dead zones — sync later when you want.
     </p>
   `;
   $('#v-crew').addEventListener('input', (e) => {
-    e.target.previousElementSibling.textContent = `Crew share (${e.target.value}%)`;
+    $('#v-crew-label').textContent = e.target.value;
   });
 }
 
 function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-function escapeAttr(s) {
-  return escapeHtml(s).replace(/'/g, '&#39;');
-}
+function escapeAttr(s) { return escapeHtml(s).replace(/'/g, '&#39;'); }
 
-// —— Events ——
+// Events
 $('#btn-enter').addEventListener('click', () => {
-  state.onboarded = true;
-  persist();
+  unlockAudio(); tapSoft();
+  state.onboarded = true; persist();
   nav('bridge');
 });
+$('#btn-demo-land').addEventListener('click', runDemoLand);
 
 $('#tabbar').addEventListener('click', (e) => {
   const t = e.target.closest('[data-nav]');
   if (!t) return;
+  unlockAudio(); tapSoft();
   nav(t.dataset.nav, { resetTrip: t.dataset.nav === 'trip' });
 });
 
-$$('[data-back]').forEach((b) => {
-  b.addEventListener('click', () => nav(b.dataset.back));
-});
+$$('[data-back]').forEach((b) => b.addEventListener('click', () => { tapSoft(); nav(b.dataset.back); }));
+$('#btn-vessel').addEventListener('click', () => { tapSoft(); nav('vessel'); });
 
-$('#btn-vessel').addEventListener('click', () => nav('vessel'));
+$('#btn-suggest-name')?.addEventListener('click', () => {
+  if (!state.draft) state.draft = blankDraft();
+  state.draft.name = suggestTripName();
+  const input = $('#f-name');
+  if (input) input.value = state.draft.name;
+  else { tripStep = 0; renderTripForm(); }
+  toast('Name suggested');
+});
 
 $('#btn-refresh-prices').addEventListener('click', () => {
   state.prices = seedPrices();
@@ -446,113 +487,67 @@ $('#btn-refresh-prices').addEventListener('click', () => {
   renderDocks();
   toast('Dock board refreshed');
 });
-
 $('#price-species').addEventListener('change', () => renderDocks());
 
 $('#btn-clear-demo').addEventListener('click', () => {
   if (!confirm('Clear all trips and reset quotas?')) return;
   const vessel = { ...state.vessel };
+  const goal = state.seasonGoal;
+  localStorage.removeItem('homeport.v2');
   localStorage.removeItem('homeport.v1');
   state = seedDemoTrip(load());
   state.vessel = vessel;
+  state.seasonGoal = goal;
   persist();
   toast('Log reset');
   renderLedger();
 });
 
-// Delegated trip list / detail
 $('#app').addEventListener('click', (e) => {
   const card = e.target.closest('[data-trip]');
-  if (card) {
-    detailId = card.dataset.trip;
-    nav('detail');
-    return;
-  }
+  if (card) { detailId = card.dataset.trip; nav('detail'); return; }
   if (e.target.id === 'btn-delete-trip') {
     state.trips = state.trips.filter((t) => t.id !== detailId);
-    persist();
-    toast('Struck from log');
-    nav('bridge');
-    return;
+    persist(); toast('Struck from log'); nav('bridge'); return;
   }
   if (e.target.id === 'v-save') {
     state.vessel.name = $('#v-name').value.trim() || state.vessel.name;
     state.vessel.homeDock = $('#v-dock').value;
     state.vessel.crewShare = Number($('#v-crew').value) / 100;
-    persist();
-    toast('Vessel saved');
-    nav('bridge');
-    return;
+    state.vessel.fuelPerHour = Number($('#v-fuel-hr').value) || 42;
+    state.seasonGoal = Number($('#v-goal').value) || 45000;
+    persist(); toast('Vessel saved'); nav('bridge'); return;
   }
-
-  // Trip wizard
   if (e.target.id === 'f-next') {
-    syncDraftFromDom();
-    tripStep = Math.min(2, tripStep + 1);
-    renderTripForm();
-    return;
+    syncDraftFromDom(); tripStep = Math.min(2, tripStep + 1); tapSoft(); renderTripForm(); return;
   }
   if (e.target.id === 'f-back') {
-    syncDraftFromDom();
-    tripStep = Math.max(0, tripStep - 1);
-    renderTripForm();
-    return;
+    syncDraftFromDom(); tripStep = Math.max(0, tripStep - 1); renderTripForm(); return;
   }
-  if (e.target.id === 'f-land') {
-    landTrip();
-    return;
-  }
+  if (e.target.id === 'f-land') { landTrip(); return; }
   if (e.target.id === 'f-add-haul') {
     syncDraftFromDom();
     state.draft.hauls.push({ species: 'haddock', weight: 100 });
-    renderTripForm();
-    return;
+    renderTripForm(); return;
   }
   const rm = e.target.closest('[data-rm]');
   if (rm) {
     syncDraftFromDom();
     const i = Number(rm.dataset.rm);
-    if (state.draft.hauls.length > 1) {
-      state.draft.hauls.splice(i, 1);
-      renderTripForm();
-    }
+    if (state.draft.hauls.length > 1) { state.draft.hauls.splice(i, 1); renderTripForm(); }
   }
 });
 
-// Deep link
 const hash = (location.hash || '').slice(1);
 if (hash === 'bridge' || state.onboarded) {
-  nav(hash === 'trip' || hash === 'docks' || hash === 'ledger' ? hash : 'bridge');
-} else {
-  nav('wake');
-}
+  nav(['trip', 'docks', 'ledger'].includes(hash) ? hash : 'bridge');
+} else nav('wake');
 
-// QA hook
 window.__HOMEPORT = {
   state: () => structuredClone(state),
   nav,
-  landDemo() {
-    nav('trip', { resetTrip: true });
-    state.draft = {
-      name: 'Night tow — Stellwagen',
-      hours: 14,
-      landDock: 'newbedford',
-      fuelCost: 510,
-      iceCost: 95,
-      otherCost: 25,
-      hauls: [
-        { species: 'scallop', weight: 240 },
-        { species: 'cod', weight: 160 },
-      ],
-      notes: 'Hard bottom. Price board favored New Bedford.',
-    };
-    tripStep = 2;
-    renderTripForm();
-  },
-  reset() {
-    localStorage.removeItem('homeport.v1');
-    location.reload();
-  },
+  landDemo: runDemoLand,
+  reset() { localStorage.removeItem('homeport.v2'); localStorage.removeItem('homeport.v1'); location.reload(); },
 };
 
-console.info('Homeport ready — profit after fuel & crew.');
+console.info('Homeport v2 — profit after fuel & crew.');

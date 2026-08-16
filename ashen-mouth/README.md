@@ -7,6 +7,8 @@ in the parlor grate. The house learned to listen. The grate is its mouth.
 Silence is stealth. Your microphone is the threat and the tool.
 
 > **Play online:** https://essamnks2020-dev.github.io/ashen-mouth/
+>
+> In this monorepo, serve from the portfolio root: `node serve.mjs` → http://localhost:5173/ashen-mouth/
 
 ---
 

@@ -2,26 +2,26 @@
 
 ## Position
 
-Not another compliance logbook. The center of gravity is **skipper profit** and **dock choice**.
+Not another compliance logbook. Center of gravity: **skipper profit** and **dock choice**.
 
 ## Visual world
 
-- Harbor ink (`#061018`), fog teal, brass — never purple SaaS, never cream/terracotta
-- Brand lockup **HOME / port** as the first signal
+- Harbor ink `#040c12`, fog teal, brass — never purple SaaS, never cream/terracotta
+- Brand **HOME / port** as the first viewport signal
 - Phone shell on desktop; full-bleed on mobile
-- Atmosphere canvas: swell bands + brass flecks
-- Type: Barlow Condensed (brand), Fraunces (display), Figtree (UI), IBM Plex Mono (money)
+- Atmosphere canvas v2: beacon pulse, fog banks, swell, brass flecks
+- Compass ring on wake; count-up money; land flash + chime
+- Type: Barlow Condensed · Fraunces · Figtree · IBM Plex Mono
 
 ## Motion
 
-- Tide ring on wake
-- Quota bars animate width
-- Screen rise on navigate
+- Compass spin, beacon pulse, quota bars, screen rise + blur
 - Respect `prefers-reduced-motion`
 
-## Product principles
+## Principles
 
-1. Value alone — one boat, no network required
-2. Offline is the default state, not an error
-3. Money numbers are mono and exact
-4. Quota warns *before* the cap, not after
+1. Value alone — one boat, no network required day one
+2. Offline is the default, not an error
+3. Money is mono and exact
+4. Quota warns *before* the cap
+5. Show the counterfactual (other docks) before you burn fuel

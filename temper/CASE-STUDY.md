@@ -48,3 +48,7 @@ Charcoal void, molten copper, quench cyan. Brand in **Syne**, UI in **Outfit**, 
 ## Adjacent craft
 
 Sits beside **ASHEN MOUTH** (listening-horror, mic as threat/tool) as proof that the same interaction sensibility transfers from game to utility.
+
+## Sibling work
+
+Also in this portfolio: **Homeport** (offshore profit logbook) and **ASHEN MOUTH** (listening-horror). Same craft standard — mechanics you can feel.
