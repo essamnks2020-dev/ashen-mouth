@@ -3,218 +3,113 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="TEMPER — cool the message before you send it. A forge for heated words." />
-  <meta name="theme-color" content="#050403" />
-  <title>TEMPER — cool it before you send it</title>
+  <meta name="description" content="Essam — interaction craft. ASHEN MOUTH and TEMPER." />
+  <meta name="theme-color" content="#070605" />
+  <title>Essam — Portfolio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./src/ui/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@600;700;800&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./portfolio.css" />
 </head>
 <body>
-  <canvas id="forge-canvas" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="top">
+    <a class="mark" href="#top">Essam</a>
+    <nav>
+      <a href="#work">Work</a>
+      <a href="#about">About</a>
+      <a href="mailto:hello@essam.dev">Contact</a>
+    </nav>
+  </header>
 
-  <div id="app">
-    <header class="topbar">
-      <a class="brand" href="#enter" data-nav="enter">
-        <span class="brand-mark">Temper</span>
-        <span class="brand-tag">message forge</span>
-      </a>
-      <nav class="nav" aria-label="Primary">
-        <button type="button" data-nav="forge">Forge</button>
-        <button type="button" data-nav="vault">Vault</button>
-        <button type="button" data-nav="patterns">Patterns</button>
-        <button type="button" data-nav="case">Case study</button>
-      </nav>
-    </header>
-
-    <!-- ENTER -->
-    <section id="screen-enter" class="screen active" data-screen="enter">
-      <div class="hero">
-        <p class="micro">Local-first · No account · Your words never leave this device</p>
-        <h1 class="hero-brand">Temper</h1>
-        <p>
-          Cool the message <strong>before</strong> you send it.
-          Hot words glow. You quench them. Meaning stays — scorch doesn’t.
-        </p>
-        <div class="hero-actions">
-          <button type="button" class="btn btn-primary" data-nav="forge">Open the forge</button>
-          <button type="button" class="btn btn-ghost" data-nav="case">Why this exists</button>
-        </div>
-        <div>
-          <p class="micro" style="margin:1.25rem 0 0.5rem">Try a molten sample</p>
-          <button type="button" class="sample-chip" data-sample="0">Angry reply</button>
-          <button type="button" class="sample-chip" data-sample="1">Breakup draft</button>
-          <button type="button" class="sample-chip" data-sample="2">Work roast</button>
-        </div>
+  <main id="top">
+    <section class="hero">
+      <p class="eyebrow">Interaction craft · games &amp; utilities</p>
+      <h1>Make the pause<br><em>feel like a product.</em></h1>
+      <p class="lede">
+        I build things people <strong>feel in their hands</strong> —
+        listening-horror, intentional friction, mechanics you remember.
+      </p>
+      <div class="hero-cta">
+        <a class="btn primary" href="#work">See the work</a>
+        <a class="btn ghost" href="./temper/">Open TEMPER</a>
       </div>
     </section>
 
-    <!-- FORGE -->
-    <section id="screen-forge" class="screen" data-screen="forge">
-      <div class="forge-layout">
-        <div class="panel">
-          <div class="panel-label">
-            <h2>Anvil</h2>
-            <div class="pill-row">
-              <span id="delta-pill" class="delta-pill" hidden></span>
-              <span id="heat-pill" class="heat-pill cool">Tempered · 0</span>
-            </div>
-          </div>
-          <div class="editor-shell">
-            <textarea
-              id="message"
-              spellcheck="true"
-              placeholder="Paste the message you’re about to send…"
-              aria-label="Message to temper"
-            ></textarea>
-            <div id="token-overlay" class="token-overlay" aria-hidden="true"></div>
-          </div>
-          <p id="summary" class="summary">The anvil is cold. Put words on it.</p>
-          <div id="compare-view" class="compare-view" hidden></div>
-          <div class="tools">
-            <button type="button" id="btn-quench" class="btn btn-quench" disabled>
-              Hold to quench
-            </button>
-            <button type="button" id="btn-copy" class="btn btn-primary" disabled>
-              Copy tempered
-            </button>
-            <button type="button" id="btn-save" class="btn btn-ghost" disabled>
-              Seal in vault
-            </button>
-            <button type="button" id="btn-compare" class="btn btn-ghost" disabled>
-              Compare
-            </button>
-            <button type="button" id="btn-clear" class="btn btn-ghost">Clear</button>
-          </div>
-          <div class="breath-row" id="breath-row" hidden>
-            <span class="micro">Breath</span>
-            <div class="breath-bar"><div id="breath-fill" class="breath-fill"></div></div>
-            <button type="button" id="btn-breath" class="btn btn-ghost" style="padding:0.4rem 0.8rem;font-size:0.75rem">Enable</button>
+    <section id="work" class="work">
+      <header class="section-head">
+        <h2>Selected work</h2>
+        <p>Two pieces. Different mediums. Same obsession with precise interaction.</p>
+      </header>
+
+      <article class="project ashen">
+        <div class="project-visual" aria-hidden="true">
+          <div class="ashen-glow"></div>
+          <span class="project-kicker">01 · Game</span>
+          <h3>ASHEN MOUTH</h3>
+        </div>
+        <div class="project-body">
+          <p class="tag">WebGL · Three.js · microphone stealth</p>
+          <h4>Silence is stealth. The grate is the mouth.</h4>
+          <p>
+            First-person listening-horror at 14 Ashen Lane. The Listener hunts by sound,
+            not sight. Find the hush-name. Whisper it at the parlor grate with the damper.
+            Never shout your own name.
+          </p>
+          <ul class="meta">
+            <li>Vendored Three.js · zero build</li>
+            <li>Mic + keyboard voice fallback</li>
+            <li>Authored house: yard → rooms → cellar</li>
+          </ul>
+          <div class="actions">
+            <a class="btn primary" href="./ashen-mouth/">Play the game</a>
+            <a class="btn ghost" href="./ashen-mouth/DESIGN.md">Design card</a>
           </div>
         </div>
+      </article>
 
-        <div class="side-stack">
-          <div class="panel meter-block">
-            <h3>Heat</h3>
-            <div class="meter-track"><div id="meter-fill" class="meter-fill"></div></div>
-            <div class="meter-meta">
-              <span id="meter-score">0</span>
-              <span>threshold <span id="threshold-label">28</span></span>
-            </div>
-          </div>
-          <div class="panel tips">
-            <h3>Smith’s notes</h3>
-            <ul id="tips-list">
-              <li>Tap a <code>glowing</code> word to anneal it with a cooler phrase.</li>
-              <li>Hold <code>quench</code> to dunk the whole plate — steam means it’s working.</li>
-              <li>Copy unlocks when heat drops under the threshold. Friction is the feature.</li>
-            </ul>
-          </div>
+      <article class="project temper">
+        <div class="project-visual" aria-hidden="true">
+          <div class="temper-embers"></div>
+          <span class="project-kicker">02 · Utility</span>
+          <h3>TEMPER</h3>
         </div>
-      </div>
-    </section>
-
-    <!-- VAULT -->
-    <section id="screen-vault" class="screen" data-screen="vault">
-      <div id="vault-root"></div>
-    </section>
-
-    <!-- PATTERNS -->
-    <section id="screen-patterns" class="screen" data-screen="patterns">
-      <div class="prose" id="patterns-root"></div>
-    </section>
-
-    <!-- CASE STUDY -->
-    <section id="screen-case" class="screen" data-screen="case">
-      <article class="prose">
-        <p class="micro">Portfolio case study</p>
-        <h1>TEMPER</h1>
-        <p>
-          People don’t regret what they <em>meant</em>. They regret the scorch —
-          the midnight absolute, the “you always,” the sentence that can’t be unsent.
-          Undo-send is a bandage after the cut. Chat rewrites feel like outsourcing your spine.
-        </p>
-        <p>
-          <strong>TEMPER</strong> is intentional friction designed as a forge.
-          Heat is measured on-device from lexicon, structure, and rhythm — no model, no upload.
-          Cooling is physical: quench, anneal hot words, optional breath into the mic.
-          The vault stores cooled plaques. Patterns read like a smith’s notes, not a guilt dashboard.
-        </p>
-
-        <h2>Problem</h2>
-        <p>
-          Regret-text is a universal failure mode of digital speech. Speed is the default.
-          Existing tools either reverse time for a few seconds or replace your voice with a generic polite mask.
-          What’s missing is a <strong>ritual pause with agency</strong> — you still write; you just don’t fire molten.
-        </p>
-
-        <h2>Mechanics</h2>
-        <ul>
-          <li><strong>Heat map</strong> — word-level glow for attacks, absolutes, caps-shouting, phrase bombs.</li>
-          <li><strong>Anneal</strong> — tap a hot word; pick a cooler alternative that keeps intent.</li>
-          <li><strong>Quench</strong> — hold to dunk; heat falls; steam and hiss give sensory proof.</li>
-          <li><strong>Breath</strong> — optional mic RMS as “blow on the metal.”</li>
-          <li><strong>Threshold lock</strong> — copy stays locked until the plate is tempered.</li>
-          <li><strong>Vault + patterns</strong> — local plaques; time-of-day and “you”-density notes.</li>
-        </ul>
-
-        <h2>Visual language</h2>
-        <p>
-          Charcoal bed, molten copper, quench cyan. Syne for the brand, Outfit for UI,
-          IBM Plex Mono for the message-as-metal. Atmosphere canvas: embers, thermometer, steam.
-          Deliberately not purple-SaaS, not cream-terracotta lifestyle, not newspaper grid.
-        </p>
-
-        <h2>Monetization path</h2>
-        <p>
-          Free: full forge, local vault. <strong>Temper Pro</strong> (planned): unlimited cloud sync,
-          deeper pattern reports, shared tempering for couples/teams, browser extension that
-          intercepts send on Gmail/Slack/iMessage drafts. Friction as a premium value prop —
-          the opposite of every growth-hack messenger.
-        </p>
-
-        <div class="pricing-tease" aria-label="Temper Pro sketch">
-          <div class="price-card">
-            <h3>Forge</h3>
-            <p class="price">Free</p>
-            <ul>
-              <li>Full heat map + quench</li>
-              <li>Local vault</li>
-              <li>Smith’s notes</li>
-            </ul>
+        <div class="project-body">
+          <p class="tag">Local-first · Web Audio · intentional friction</p>
+          <h4>Cool the message before you send it.</h4>
+          <p>
+            A forge for heated words. Paste the angry reply. Hot words glow. Quench,
+            anneal, breathe. Copy unlocks only when the plate is tempered.
+            Meaning stays — scorch doesn’t. Monetizable Pro path framed in-product.
+          </p>
+          <ul class="meta">
+            <li>On-device heat lexicon · no upload</li>
+            <li>Phrase-aware quench · compare view</li>
+            <li>Vault plaques · smith’s notes</li>
+          </ul>
+          <div class="actions">
+            <a class="btn primary" href="./temper/">Open the forge</a>
+            <a class="btn ghost" href="./temper/#case">Case study</a>
           </div>
-          <div class="price-card pro">
-            <h3>Temper Pro</h3>
-            <p class="price">$5<span>/mo</span></p>
-            <ul>
-              <li>Cloud sync across devices</li>
-              <li>Weekly scorch report</li>
-              <li>Shared tempering (couples/teams)</li>
-              <li>Browser send-guard extension</li>
-            </ul>
-            <p class="micro">Framed for portfolio — not charging yet.</p>
-          </div>
-        </div>
-
-        <h2>Privacy</h2>
-        <p>
-          Everything runs in your browser. localStorage only. No analytics SDK. Breath audio
-          is processed in real time and never stored. That is a product feature, not a footnote.
-        </p>
-
-        <div class="hero-actions" style="margin-top:1.75rem">
-          <button type="button" class="btn btn-primary" data-nav="forge">Temper a message</button>
         </div>
       </article>
     </section>
 
-    <p class="footer-note">TEMPER · MIT · Your forge, your metal</p>
-  </div>
+    <section id="about" class="about">
+      <h2>About</h2>
+      <p>
+        I care about <em>mechanics you can feel</em> — not dashboards, not purple gradients,
+        not “AI rewrite this.” Games that listen. Tools that make you pause without lecturing.
+        If friction is the feature, it should still be beautiful.
+      </p>
+      <p class="micro">Available for product / interaction work · portfolio pieces MIT unless noted</p>
+    </section>
+  </main>
 
-  <div id="cooler-pop" class="cooler-pop" role="dialog" aria-label="Cooler alternatives"></div>
-  <div id="toast" class="toast" role="status"></div>
-
-  <script type="module" src="./src/main.js"></script>
+  <footer>
+    <span>© Essam</span>
+    <span>ASHEN MOUTH · TEMPER</span>
+  </footer>
+  <script type="module" src="./portfolio.js"></script>
 </body>
 </html>
