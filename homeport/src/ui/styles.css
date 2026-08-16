@@ -408,6 +408,7 @@ a { color: inherit; text-decoration: none; }
   background: rgba(6, 16, 24, 0.92);
   backdrop-filter: blur(12px);
 }
+.tabbar[hidden] { display: none !important; }
 .tab {
   padding: 0.55rem 0.2rem;
   border-radius: 0.15rem;
