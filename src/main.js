@@ -1,4 +1,4 @@
-import { analyze, replaceToken } from './heat.js';
+import { analyze, replaceToken, quenchPulse, diffWords } from './heat.js';
 import { createForge } from './forge.js';
 import { unlockAudio, setHeatDrone, quenchHiss, metalTing, anvilTap, copyChime } from './audio.js';
 import { isBreathSupported, startBreath, stopBreath } from './breath.js';
@@ -19,13 +19,16 @@ const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const state = {
   screen: 'enter',
   text: '',
+  originalText: '',
   analysis: analyze(''),
   heatBefore: 0,
-  coolOffset: 0, // quench / breath can pull heat even when lexicon is stuck
+  coolOffset: 0,
   quenching: false,
   quenchTimer: null,
   settings: loadSettings(),
   selectedToken: null,
+  compare: false,
+  wasReady: false,
 };
 
 const canvas = $('#forge-canvas');
@@ -55,6 +58,9 @@ const els = {
   breathFill: $('#breath-fill'),
   btnBreath: $('#btn-breath'),
   tips: $('#tips-list'),
+  comparePanel: $('#compare-view'),
+  deltaPill: $('#delta-pill'),
+  btnCompare: $('#btn-compare'),
 };
 
 els.threshold.textContent = String(state.settings.threshold);
@@ -125,7 +131,6 @@ function renderAnalysis() {
   els.meterScore.textContent = String(score);
   els.summary.textContent = state.text.trim() ? summary : 'The anvil is cold. Put words on it.';
 
-  // token overlay — only non-space hot tokens get handlers
   const parts = a.tokens.map((t) => {
     if (/^\s+$/.test(t.text)) return t.text;
     if (t.hot) {
@@ -142,23 +147,73 @@ function renderAnalysis() {
   els.btnCopy.disabled = !ready;
   els.btnSave.disabled = !hasText;
 
-  // live tips
+  // Ready celebration (once)
+  document.body.classList.toggle('plate-ready', ready);
+  if (ready && !state.wasReady) {
+    state.wasReady = true;
+    metalTing();
+  }
+  if (!ready) state.wasReady = false;
+
+  // Delta from original heat
+  if (els.deltaPill) {
+    if (hasText && state.heatBefore > 0) {
+      const pulled = Math.max(0, state.heatBefore - score);
+      els.deltaPill.hidden = false;
+      els.deltaPill.textContent = pulled > 0
+        ? `${state.heatBefore}→${score} · −${pulled} scorch`
+        : `heat ${score}`;
+    } else {
+      els.deltaPill.hidden = true;
+    }
+  }
+
+  if (els.btnCompare) {
+    els.btnCompare.disabled = !state.originalText || state.originalText === state.text;
+  }
+  renderCompare();
+
   const tips = [];
   if (a.hotCount) tips.push(`<li>${a.hotCount} hot word${a.hotCount === 1 ? '' : 's'} on the plate. Tap a glow to anneal.</li>`);
   if (a.youCount > a.iCount && a.youCount >= 3) {
     tips.push(`<li>“You” appears ${a.youCount}× vs “I” ${a.iCount}× — accusatory skew feeds the fire.</li>`);
   }
   if (a.phraseHits.length) {
-    tips.push(`<li>Phrase bomb: <code>${escapeHtml(a.phraseHits[0].phrase)}</code> — that’s forge-grade heat.</li>`);
+    tips.push(`<li>Phrase bomb: <code>${escapeHtml(a.phraseHits[0].phrase)}</code> — forge-grade heat.</li>`);
   }
   if (band === 'molten') tips.push('<li>Molten. Quench hard before this leaves your hands.</li>');
   if (ready) tips.push('<li>Plate is tempered. Copy when the words still sound like you.</li>');
   if (!tips.length) {
-    tips.push('<li>Tap a <code>glowing</code> word to anneal it with a cooler phrase.</li>');
-    tips.push('<li>Hold <code>quench</code> (or mash it / hold Space) to dunk the plate — steam means it’s working.</li>');
-    tips.push('<li>Copy unlocks when heat drops under the threshold. Friction is the feature.</li>');
+    tips.push('<li>Tap a <code>glowing</code> word to anneal it.</li>');
+    tips.push('<li>Hold <code>quench</code> (or Space) to dunk the plate.</li>');
+    tips.push('<li>Copy unlocks under the heat threshold. Friction is the feature.</li>');
   }
   els.tips.innerHTML = tips.join('');
+}
+
+function renderCompare() {
+  if (!els.compareView) return;
+  if (!state.compare || !state.originalText) {
+    els.compareView.hidden = true;
+    return;
+  }
+  els.compareView.hidden = false;
+  const diff = diffWords(state.originalText, state.text);
+  const afterHtml = diff.map((d) => (
+    d.changed
+      ? `<mark class="diff-new">${escapeHtml(d.text)}</mark>`
+      : escapeHtml(d.text)
+  )).join('');
+  els.compareView.innerHTML = `
+    <div class="compare-col">
+      <h4>Molten in</h4>
+      <pre>${escapeHtml(state.originalText)}</pre>
+    </div>
+    <div class="compare-col">
+      <h4>Tempered out</h4>
+      <pre>${afterHtml}</pre>
+    </div>
+  `;
 }
 
 function escapeHtml(s) {
@@ -169,49 +224,27 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-function setText(text, { trackBefore = false, resetCool = false } = {}) {
+function setText(text, { trackBefore = false, resetCool = false, setOriginal = false } = {}) {
   state.text = text;
   els.message.value = text;
   const a = analyze(text);
   state.analysis = a;
   if (resetCool) state.coolOffset = 0;
-  if (trackBefore || state.heatBefore === 0) state.heatBefore = a.score;
+  if (setOriginal || (!state.originalText && text.trim())) {
+    state.originalText = text;
+  }
+  if (trackBefore || state.heatBefore === 0) state.heatBefore = Math.max(state.heatBefore, a.score);
   if (text.trim() && a.score > state.heatBefore) state.heatBefore = a.score;
-  // If lexicon cooled on its own, ease the offset so UI stays honest
   if (state.coolOffset > a.score) state.coolOffset = a.score;
   renderAnalysis();
   syncOverlayScroll();
 }
 
-function applyPassiveCool(amount) {
-  // Soften text heat by removing bangs / lowering caps on hottest tokens — structural quench
-  // For quench-hold we reduce effective score via iterative bang stripping + cooler bias
-  let text = state.text;
-  if (amount >= 1 && /!/.test(text)) {
-    text = text.replace(/!+/g, (m) => (m.length > 1 ? '!' : ''));
-  }
-  // Reduce ALL CAPS words gradually
-  if (amount >= 2) {
-    text = text.replace(/\b[A-Z]{3,}\b/g, (w) => {
-      if (Math.random() > 0.45) return w.charAt(0) + w.slice(1).toLowerCase();
-      return w;
-    });
-  }
-  setText(text);
-}
-
 function quenchStep() {
-  applyPassiveCool(2);
-  // Anneal one hot word per pulse when still blazing
-  const a = analyze(state.text);
-  if (a.score > 35) {
-    const hot = a.tokens.find((t) => t.hot && t.coolers && t.coolers.length);
-    if (hot) {
-      setText(replaceToken(state.text, hot.i, hot.coolers[0]));
-    }
-  }
-  // Guaranteed cool — quench always pulls heat even if structure is sticky
-  state.coolOffset = Math.min(100, state.coolOffset + 7);
+  const pulse = quenchPulse(state.text);
+  if (pulse.changed) setText(pulse.text);
+  // Guaranteed cool even if lexicon is sticky
+  state.coolOffset = Math.min(100, state.coolOffset + 6);
   renderAnalysis();
   forge.burstSteam(10);
   quenchHiss(0.7 + Math.random() * 0.4);
@@ -351,7 +384,9 @@ $$('[data-sample]').forEach((el) => {
     const i = Number(el.dataset.sample);
     state.heatBefore = 0;
     state.coolOffset = 0;
-    setText(SAMPLES[i], { trackBefore: true, resetCool: true });
+    state.originalText = '';
+    state.compare = false;
+    setText(SAMPLES[i], { trackBefore: true, resetCool: true, setOriginal: true });
     nav('forge');
     toast('Molten sample on the anvil');
   });
@@ -470,9 +505,19 @@ els.btnSave.addEventListener('click', () => {
 els.btnClear.addEventListener('click', () => {
   state.heatBefore = 0;
   state.coolOffset = 0;
+  state.originalText = '';
+  state.compare = false;
   setText('', { resetCool: true });
   closeCooler();
 });
+
+if (els.btnCompare) {
+  els.btnCompare.addEventListener('click', () => {
+    state.compare = !state.compare;
+    els.btnCompare.classList.toggle('active', state.compare);
+    renderCompare();
+  });
+}
 
 els.vaultRoot.addEventListener('click', async (e) => {
   const navBtn = e.target.closest('[data-nav]');
@@ -519,10 +564,10 @@ els.btnBreath.addEventListener('click', async () => {
   const ok = await startBreath((level) => {
     els.breathFill.style.width = `${Math.round(level * 100)}%`;
     if (level > 0.35 && state.text.trim() && effectiveScore() > 0) {
-      // breath cools gently
       if (!els.btnBreath._last || performance.now() - els.btnBreath._last > 500) {
         els.btnBreath._last = performance.now();
-        applyPassiveCool(1);
+        const pulse = quenchPulse(state.text);
+        if (pulse.changed) setText(pulse.text);
         state.coolOffset = Math.min(100, state.coolOffset + 3 + level * 4);
         renderAnalysis();
         if (level > 0.55) {
@@ -551,9 +596,11 @@ renderAnalysis();
 // Expose a tiny QA hook
 window.__TEMPER = {
   analyze,
+  quenchPulse,
   setText: (t) => {
     state.coolOffset = 0;
-    setText(t, { trackBefore: true, resetCool: true });
+    state.originalText = '';
+    setText(t, { trackBefore: true, resetCool: true, setOriginal: true });
   },
   quench: (n = 3) => {
     for (let i = 0; i < n; i++) quenchStep();
@@ -568,6 +615,8 @@ window.__TEMPER = {
     chars: state.text.length,
     vault: loadVault().length,
     copyReady: !els.btnCopy.disabled,
+    original: state.originalText.slice(0, 80),
+    text: state.text.slice(0, 80),
   }),
 };
 

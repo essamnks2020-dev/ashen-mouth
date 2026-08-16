@@ -56,7 +56,10 @@
         <div class="panel">
           <div class="panel-label">
             <h2>Anvil</h2>
-            <span id="heat-pill" class="heat-pill cool">Tempered · 0</span>
+            <div class="pill-row">
+              <span id="delta-pill" class="delta-pill" hidden></span>
+              <span id="heat-pill" class="heat-pill cool">Tempered · 0</span>
+            </div>
           </div>
           <div class="editor-shell">
             <textarea
@@ -68,6 +71,7 @@
             <div id="token-overlay" class="token-overlay" aria-hidden="true"></div>
           </div>
           <p id="summary" class="summary">The anvil is cold. Put words on it.</p>
+          <div id="compare-view" class="compare-view" hidden></div>
           <div class="tools">
             <button type="button" id="btn-quench" class="btn btn-quench" disabled>
               Hold to quench
@@ -77,6 +81,9 @@
             </button>
             <button type="button" id="btn-save" class="btn btn-ghost" disabled>
               Seal in vault
+            </button>
+            <button type="button" id="btn-compare" class="btn btn-ghost" disabled>
+              Compare
             </button>
             <button type="button" id="btn-clear" class="btn btn-ghost">Clear</button>
           </div>
@@ -166,6 +173,29 @@
           intercepts send on Gmail/Slack/iMessage drafts. Friction as a premium value prop —
           the opposite of every growth-hack messenger.
         </p>
+
+        <div class="pricing-tease" aria-label="Temper Pro sketch">
+          <div class="price-card">
+            <h3>Forge</h3>
+            <p class="price">Free</p>
+            <ul>
+              <li>Full heat map + quench</li>
+              <li>Local vault</li>
+              <li>Smith’s notes</li>
+            </ul>
+          </div>
+          <div class="price-card pro">
+            <h3>Temper Pro</h3>
+            <p class="price">$5<span>/mo</span></p>
+            <ul>
+              <li>Cloud sync across devices</li>
+              <li>Weekly scorch report</li>
+              <li>Shared tempering (couples/teams)</li>
+              <li>Browser send-guard extension</li>
+            </ul>
+            <p class="micro">Framed for portfolio — not charging yet.</p>
+          </div>
+        </div>
 
         <h2>Privacy</h2>
         <p>

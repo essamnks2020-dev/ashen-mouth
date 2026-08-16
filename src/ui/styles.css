@@ -775,3 +775,164 @@ a { color: var(--quench); }
   color: rgba(168, 162, 158, 0.55);
   letter-spacing: 0.06em;
 }
+
+/* —— Peak polish pass —— */
+.pill-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.delta-pill {
+  font-family: var(--font-msg);
+  font-size: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  color: var(--quench);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  background: rgba(14, 116, 144, 0.15);
+}
+
+.token-overlay .tok.hot {
+  animation: emberPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes emberPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+  50% { box-shadow: 0 0 18px rgba(251, 191, 36, 0.55); }
+}
+
+body.plate-ready .btn-primary:not(:disabled) {
+  animation: readyGlow 1.6s ease-in-out infinite;
+}
+
+@keyframes readyGlow {
+  0%, 100% { box-shadow: var(--glow-ember); }
+  50% { box-shadow: 0 0 64px rgba(52, 211, 153, 0.55); }
+}
+
+.btn-ghost.active {
+  border-color: var(--quench);
+  color: var(--quench);
+  background: rgba(14, 116, 144, 0.18);
+}
+
+.compare-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+  animation: rise 0.4s var(--ease);
+}
+
+@media (max-width: 720px) {
+  .compare-view { grid-template-columns: 1fr; }
+}
+
+.compare-col {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(5, 4, 3, 0.65);
+  border: 1px solid rgba(168, 162, 158, 0.2);
+}
+
+.compare-col h4 {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-brand);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+
+.compare-col pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-msg);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--bone);
+}
+
+.diff-new {
+  background: rgba(34, 211, 238, 0.22);
+  color: #ecfeff;
+  border-radius: 0.2em;
+  padding: 0 0.15em;
+}
+
+.pricing-tease {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.price-card {
+  padding: 1.15rem 1.2rem;
+  border-radius: 1rem;
+  background: rgba(12, 10, 9, 0.75);
+  border: 1px solid rgba(168, 162, 158, 0.22);
+}
+
+.price-card.pro {
+  border-color: rgba(234, 88, 12, 0.55);
+  box-shadow: var(--glow-ember);
+}
+
+.price-card h3 {
+  margin: 0;
+  font-family: var(--font-brand);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  color: var(--ash);
+}
+
+.price-card .price {
+  margin: 0.5rem 0 0.85rem;
+  font-family: var(--font-brand);
+  font-size: 2rem;
+  color: var(--molten);
+}
+
+.price-card .price span {
+  font-size: 0.85rem;
+  color: var(--ash);
+}
+
+.price-card ul {
+  margin: 0;
+  padding: 0 0 0 1rem;
+  color: var(--ash);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.hero-brand {
+  animation: brandIn 1s var(--ease) both;
+}
+
+@keyframes brandIn {
+  from { opacity: 0; letter-spacing: 0.12em; filter: blur(6px); }
+  to { opacity: 1; letter-spacing: -0.03em; filter: blur(0); }
+}
+
+.panel {
+  transition: border-color 0.35s, box-shadow 0.35s;
+}
+
+body.plate-ready .panel {
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.sample-chip {
+  backdrop-filter: blur(6px);
+}
+
+.sample-chip:active {
+  transform: scale(0.96);
+}
