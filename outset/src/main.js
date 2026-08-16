@@ -10,6 +10,7 @@ import {
   todaysPlan,
   departuresOnDay,
   weekSealedCount,
+  expandSchedule,
   leaveBy,
   formatTime,
   formatDay,
@@ -191,7 +192,6 @@ function renderWeek() {
 function renderHome() {
   const { home, there, dest } = wxPair();
   const { ev, leave, mins, travel } = leaveInfo();
-  const todayLeaves = todaysPlan(state);
   const leftToday = departuresOnDay(state).length;
 
   $("#greeting").textContent = `Good ${period()}, ${state.name}.`;
@@ -219,21 +219,29 @@ function renderHome() {
   const forgot = topForgot(state, 1)[0];
   if (forgot?.item) tips.push(`You often forget ${forgot.item.label}.`);
   if (state.streaks?.current >= 2) tips.push(`${state.streaks.current} days in a row — keep going.`);
-  if (!todayLeaves.length) tips.push("Add a weekly routine in Settings so tomorrow is ready.");
+  if (!(state.routines || []).length) tips.push("Add a weekly routine in Settings so tomorrow is ready.");
   $("#brief-text").textContent = tips.slice(0, 2).join(" ");
 
   const plan = $("#today-plan");
-  if (!todayLeaves.length) {
-    plan.innerHTML = `<p class="plan-empty">Nothing else today. Use Quick leave for errands, or set weekly routines in Settings.</p>`;
+  const todayLeaves = todaysPlan(state);
+  const coming = expandSchedule(state, 3).slice(0, 5);
+  const rows = todayLeaves.length ? todayLeaves : coming;
+  const headings = [...document.querySelectorAll("#screen-home .section")];
+  const planHeading = headings.find((h) => /leaves|coming/i.test(h.textContent));
+  if (planHeading) planHeading.textContent = todayLeaves.length ? "Today's leaves" : "Coming next";
+
+  if (!rows.length) {
+    plan.innerHTML = `<p class="plan-empty">No leaves planned. Tap Quick leave, or add a weekly routine in Settings.</p>`;
   } else {
-    plan.innerHTML = todayLeaves
+    plan.innerHTML = rows
       .map((e) => {
         const d = destById(e.placeId);
         const on = (state.activeEventId || nextEvent(state)?.id) === e.id;
         const tag = e.source === "routine" ? "weekly" : "once";
+        const whenDay = dayStamp(new Date(e.at)) === dayStamp() ? "today" : formatDay(e.at);
         return `<button type="button" class="plan-row ${on ? "on" : ""}" data-event="${e.id}" data-place="${e.placeId}">
           <span class="t">${formatTime(e.at)}</span>
-          <span class="body"><b>${escapeHtml(e.title)}</b><span>${escapeHtml(d?.label || "")} · ${tag}</span></span>
+          <span class="body"><b>${escapeHtml(e.title)}</b><span>${whenDay} · ${escapeHtml(d?.label || "")} · ${tag}</span></span>
         </button>`;
       })
       .join("");

@@ -86,8 +86,12 @@ function defaultState() {
     events: [
       {
         id: "e_soon",
-        title: "Something later today",
-        at: Date.now() + 2.5 * 3600e3,
+        title: "Tonight errand",
+        at: (() => {
+          const d = new Date();
+          d.setMinutes(d.getMinutes() + 90);
+          return d.getTime();
+        })(),
         placeId: "errand",
       },
     ],
@@ -118,6 +122,15 @@ function defaultState() {
         minute: 0,
         placeId: "cafe",
         days: ["sat", "sun"],
+        enabled: true,
+      },
+      {
+        id: "r_evening",
+        title: "Evening out",
+        hour: 20,
+        minute: 0,
+        placeId: "friend",
+        days: ["fri", "sat", "sun"],
         enabled: true,
       },
     ],
