@@ -2,17 +2,28 @@
 
 **Leave home ready — every time.**
 
-## What is this app? (simple)
+## What is this app? (simple words)
 
-Outset is a small helper you open **right before you leave home**.
+**Outset is a leave-home helper.**
 
-It shows:
-1. **When to leave** so you are not late  
-2. **Weather where you're going** (not only at home)  
-3. **A short list of what to take** (keys, bag, umbrella if it rains…)
+You open it **before you walk out the door**. It helps you with three things:
 
-You tap through, check your stuff, open the door, and go.  
-Set **weekly routines** (work, gym, class) once — then use Outset every morning and every time you go out again the same day.
+1. **When to leave** — so you are not late  
+2. **Weather where you're going** — not only at home  
+3. **What to take** — a short pack list (keys, bag, umbrella if it rains…)
+
+You check your stuff, open the door, and go.
+
+### Why people use it for a long time
+
+- Set **weekly routines** once (work Mon–Fri, gym Tue/Thu, class…)
+- See **today’s leaves** all day — morning, afternoon, evening
+- **Quick leave** when you have no calendar event
+- **Streak** + best streak + history of what you forget
+- **Leave anyway** still remembers misses so the pack list gets smarter
+- After each leave you go **back to your day** for the next one
+
+Everything stays on your device (localStorage). No account.
 
 ## Run
 
@@ -20,14 +31,6 @@ Set **weekly routines** (work, gym, class) once — then use Outset every mornin
 node serve.mjs
 # → http://localhost:5173/outset/
 ```
-
-## Why people keep using it
-
-- Weekly routines repeat forever
-- Today's leaves list (morning + afternoon + evening)
-- Streak + “left today” + week count
-- Quick leave for errands with no calendar event
-- Pack presets and weather-aware items
 
 ## Brand
 

@@ -2,7 +2,7 @@
 
 ## In one sentence
 
-Outset helps you leave home on time with the right things — every day, not once.
+Outset is a leave-home helper: when to leave, weather where you're going, and what to pack — every day.
 
 ## Problem
 
@@ -10,4 +10,4 @@ People forget umbrellas, leave late, and check three apps (calendar, weather, no
 
 ## Solution
 
-One calm screen flow before each leave, plus weekly routines so the app stays useful for months.
+One calm screen flow before each leave, plus weekly routines so the app stays useful for months — streaks, forget history, and “back to my day” for multiple leaves.

@@ -21,6 +21,8 @@ import {
   upsertItem,
   upsertEvent,
   upsertRoutine,
+  removeRoutine,
+  upsertDestination,
   travelMinutes,
   TRAVEL_MODES,
   PRESETS,
@@ -40,6 +42,7 @@ let state = load();
 let screen = "wake";
 let sealed = false;
 let ritualDestId = state.selectedDestId;
+let remindKey = ""; // eventId+day — fire leave reminder once per leave
 
 const atmos = createAtmos($("#atmos"));
 const toastEl = $("#toast");
@@ -142,6 +145,28 @@ function tickClock() {
   const now = new Date();
   $("#status-clock").textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   if (screen === "home") updateCountdownOnly();
+  maybeLeaveReminder();
+}
+
+function maybeLeaveReminder() {
+  if (state.prefs?.leaveReminders === false) return;
+  if (screen === "seal" || sealed) return;
+  const { ev, mins, dest } = leaveInfo();
+  if (!ev || mins == null) return;
+  // nudge once when leave-by is within 12 minutes
+  if (mins > 12 || mins < -5) return;
+  const key = `${ev.id}_${dayStamp()}`;
+  if (remindKey === key) return;
+  remindKey = key;
+  const msg = `Leave soon for ${ev.title} · ${dest.label} · ${mins <= 0 ? "now" : `in ${mins} min`}`;
+  toast(msg);
+  try {
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      new Notification("Outset — time to leave", { body: msg, tag: key });
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 function updateCountdownOnly() {
@@ -199,7 +224,15 @@ function renderHome() {
 
   $("#stat-streak").textContent = String(state.streaks?.current || 0);
   $("#stat-today").textContent = String(leftToday);
-  $("#stat-week").textContent = String(weekSealedCount(state));
+  $("#stat-best").textContent = String(state.streaks?.best || 0);
+  const weekN = weekSealedCount(state);
+  const weekLine = $("#week-line");
+  if (weekLine) {
+    weekLine.textContent =
+      weekN === 0
+        ? "This week: no leaves sealed yet — start your streak today."
+        : `This week: ${weekN} leave${weekN === 1 ? "" : "s"} sealed · best streak ${state.streaks?.best || 0}`;
+  }
 
   $("#home-temp").textContent = `${home.temp}°`;
   $("#home-cond").textContent = `${home.label} · feel ${home.feels}° · wind ${home.wind}`;
@@ -217,9 +250,12 @@ function renderHome() {
   tips.push(layerHint(home, there));
   if (there.precip || home.precip) tips.push("Take an umbrella.");
   const forgot = topForgot(state, 1)[0];
-  if (forgot?.item) tips.push(`You often forget ${forgot.item.label}.`);
+  if (forgot?.item) tips.push(`You often forget ${forgot.item.label} — put it by the door.`);
   if (state.streaks?.current >= 2) tips.push(`${state.streaks.current} days in a row — keep going.`);
-  if (!(state.routines || []).length) tips.push("Add a weekly routine in Settings so tomorrow is ready.");
+  if (state.streaks?.best >= 5 && state.streaks.current === state.streaks.best)
+    tips.push(`Personal best: ${state.streaks.best} days.`);
+  if (!(state.routines || []).some((r) => r.enabled !== false))
+    tips.push("Add a weekly routine in Settings so tomorrow is ready.");
   $("#brief-text").textContent = tips.slice(0, 2).join(" ");
 
   const plan = $("#today-plan");
@@ -350,8 +386,16 @@ function renderCheck() {
   }
 
   const btn = $("#btn-to-seal");
-  btn.disabled = total > 0 && done < total;
+  const anyway = $("#btn-leave-anyway");
+  const incomplete = total > 0 && done < total;
+  btn.disabled = incomplete;
   btn.textContent = total === 0 || done >= total ? "Step out" : `Check ${total - done} more`;
+  if (anyway) {
+    anyway.hidden = !incomplete;
+    anyway.textContent = incomplete
+      ? `Leave anyway · remember ${total - done} miss${total - done === 1 ? "" : "es"}`
+      : "Leave anyway";
+  }
   atmos.setWeather(there.condition);
 }
 
@@ -368,10 +412,13 @@ function renderSeal() {
     openBtn.hidden = true;
     againBtn.hidden = false;
     copyBtn.hidden = false;
+    againBtn.textContent = "Back to my day";
     $("#seal-title").textContent = "You're set.";
+    const streak = state.streaks?.current || 0;
+    const best = state.streaks?.best || 0;
     $("#seal-sub").textContent = `Sealed · ${formatTime(Date.now())} · ${dest.label} · ${there.temp}° ${there.label}${
       ev ? ` · ${ev.title}` : ""
-    }`;
+    } · streak ${streak}${best > streak ? ` (best ${best})` : ""}`;
     door.classList.add("open");
     stage.classList.add("open");
     atmos.setMode("open");
@@ -380,7 +427,7 @@ function renderSeal() {
     againBtn.hidden = true;
     copyBtn.hidden = true;
     $("#seal-title").textContent = "Ready when you are.";
-    $("#seal-sub").textContent = "Everything checked. Open the door.";
+    $("#seal-sub").textContent = "Open the door when you're ready to go.";
     door.classList.remove("open");
     stage.classList.remove("open");
     atmos.setMode("ritual");
@@ -393,8 +440,8 @@ function renderSettings() {
   const upcoming = upcomingEvents(state, 8);
   const dayOpts = WEEKDAYS.map((d) => `<option value="${d}">${d}</option>`).join("");
   body.innerHTML = `
-    <p class="tip-card" style="margin-top:0"><b>Keep using Outset</b>
-      <span>Set weekly routines once (work, gym, class). Outset shows them every matching day — morning, afternoon, evening.</span>
+    <p class="tip-card" style="margin-top:0"><b>Use it for months</b>
+      <span>Set weekly routines once. Open Outset every time you leave. It learns what you forget and keeps your streak.</span>
     </p>
 
     <div class="field">
@@ -405,6 +452,10 @@ function renderSettings() {
       <label for="set-buffer">Leave this many minutes early</label>
       <input id="set-buffer" type="number" min="3" max="45" value="${state.prefs.leaveBufferMin}" />
     </div>
+    <label class="check-row prefs-row">
+      <input type="checkbox" id="set-remind" ${state.prefs.leaveReminders !== false ? "checked" : ""} />
+      <span>Remind me when it's almost time to leave (while Outset is open)</span>
+    </label>
 
     <p class="section">Weekly routines</p>
     <div id="routine-list">
@@ -416,9 +467,10 @@ function renderSettings() {
           return `<div class="hist">
             <b>${escapeHtml(r.title)} · ${time}</b>
             <span>${escapeHtml(d?.label || "")} · ${escapeHtml(days)} · ${r.enabled === false ? "off" : "on"}</span>
-            <button type="button" class="btn btn-ghost" data-toggle-routine="${r.id}" style="margin-top:0.4rem;padding:0.45rem 0.7rem;font-size:0.72rem;border-radius:999px">
-              ${r.enabled === false ? "Turn on" : "Turn off"}
-            </button>
+            <div class="row-actions">
+              <button type="button" class="btn btn-ghost" data-toggle-routine="${r.id}">${r.enabled === false ? "Turn on" : "Turn off"}</button>
+              <button type="button" class="btn btn-ghost" data-remove-routine="${r.id}">Remove</button>
+            </div>
           </div>`;
         })
         .join("") || `<p class="sub">No routines yet.</p>`}
@@ -435,6 +487,18 @@ function renderSettings() {
       <select id="rt-days" multiple size="4">${dayOpts}</select>
     </div>
     <button type="button" class="btn btn-primary btn-block" id="btn-add-routine">Save routine</button>
+
+    <p class="section" style="margin-top:1.2rem">Places · travel time (minutes)</p>
+    <div id="dest-editor">
+      ${state.destinations
+        .map(
+          (d) => `<div class="hist dest-edit">
+            <b>${escapeHtml(d.label)}</b>
+            <label class="inline-num">Travel <input type="number" min="5" max="120" data-travel="${d.id}" value="${d.travelMin}" /></label>
+          </div>`
+        )
+        .join("")}
+    </div>
 
     <p class="section" style="margin-top:1.2rem">One-time leave</p>
     <div class="field"><label for="ev-title">Title</label><input id="ev-title" placeholder="Meeting…" /></div>
@@ -489,7 +553,24 @@ function renderSettings() {
     state = { ...state, prefs: { ...state.prefs, leaveBufferMin: n } };
     persist();
   };
+  $("#set-remind").onchange = (e) => {
+    state = { ...state, prefs: { ...state.prefs, leaveReminders: e.target.checked } };
+    persist();
+    if (e.target.checked && typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+    toast(e.target.checked ? "Leave reminders on" : "Leave reminders off");
+  };
   $("#routine-list").onclick = (e) => {
+    const rem = e.target.closest("[data-remove-routine]")?.dataset.removeRoutine;
+    if (rem) {
+      state = removeRoutine(state, rem);
+      persist();
+      tap();
+      toast("Routine removed");
+      renderSettings();
+      return;
+    }
     const id = e.target.closest("[data-toggle-routine]")?.dataset.toggleRoutine;
     if (!id) return;
     const r = (state.routines || []).find((x) => x.id === id);
@@ -498,6 +579,16 @@ function renderSettings() {
     persist();
     tap();
     renderSettings();
+  };
+  $("#dest-editor").onchange = (e) => {
+    const id = e.target.dataset.travel;
+    if (!id) return;
+    const dest = state.destinations.find((d) => d.id === id);
+    if (!dest) return;
+    const travelMin = Math.max(5, Math.min(120, Number(e.target.value) || dest.travelMin));
+    state = upsertDestination(state, { ...dest, travelMin });
+    persist();
+    toast("Travel time saved");
   };
   $("#btn-add-routine").onclick = () => {
     const title = $("#rt-title").value.trim() || "Routine";
@@ -752,13 +843,20 @@ $("#btn-to-seal").onclick = () => {
   sealed = false;
   showScreen("seal");
 };
+$("#btn-leave-anyway")?.addEventListener("click", () => {
+  tap();
+  sealed = false;
+  showScreen("seal");
+  toast("Misses will be remembered");
+});
 $("#btn-seal-open").onclick = () => sealDeparture();
 $("#btn-again").onclick = () => {
   tap();
   sealed = false;
   state = resetChecks(state);
   persist();
-  showScreen("wake");
+  showScreen("home");
+  toast("Ready for the next leave today");
 };
 $("#btn-copy-leaving").onclick = () => copyLeaving();
 $("#btn-share").onclick = () => {

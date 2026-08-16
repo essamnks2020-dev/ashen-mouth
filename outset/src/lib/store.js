@@ -147,6 +147,7 @@ function defaultState() {
       leaveBufferMin: 8,
       sound: true,
       briefTips: true,
+      leaveReminders: true,
     },
   };
 }

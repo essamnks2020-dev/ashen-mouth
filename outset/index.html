@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
-    <meta name="description" content="Outset — between home and the world. Leave-by, destination weather, and a pack that knows your day." />
+    <meta name="description" content="Outset helps you leave home on time with the right things. When to leave, weather where you're going, and a short pack list." />
     <meta name="theme-color" content="#fbf8f2" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <title>Outset — between home and the world</title>
+    <title>Outset — leave home ready</title>
     <link rel="icon" href="./src/assets/logo.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./src/assets/logo.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -39,14 +39,20 @@
             </div>
             <div class="brand-row">
               <img src="./src/assets/logo.svg" alt="" width="40" height="40" />
-              <span class="brand-chip">Daily departure</span>
+              <span class="brand-chip">Your leave-home helper</span>
             </div>
             <h1 class="brand">Outset</h1>
             <p class="lede">Leave home ready — every time.</p>
-            <p class="sub">
-              Open this when you're about to go out. It tells you <strong>when to leave</strong>,
-              the <strong>weather where you're going</strong>, and a <strong>short list of what to take</strong>
-              — so you don't forget things or run late. Use it all day, every day.
+            <p class="sub what-is">
+              <strong>What is Outset?</strong>
+              A small app you open before you walk out the door.
+              It answers three things: <strong>when to leave</strong>,
+              <strong>what the weather is where you're going</strong>,
+              and <strong>what to take with you</strong>.
+            </p>
+            <p class="sub sticky-note">
+              Set your week once (work, gym, class). Then open Outset every morning —
+              and again each time you leave. It remembers your streak and what you forget.
             </p>
             <div class="stack">
               <button type="button" class="btn btn-primary btn-block" id="btn-begin">Open my day</button>
@@ -70,8 +76,9 @@
               <div class="stat-row">
                 <div class="stat"><b id="stat-streak">0</b><span>Day streak</span></div>
                 <div class="stat"><b id="stat-today">0</b><span>Left today</span></div>
-                <div class="stat"><b id="stat-week">0</b><span>This week</span></div>
+                <div class="stat"><b id="stat-best">0</b><span>Best streak</span></div>
               </div>
+              <p class="week-line" id="week-line">This week: 0 leaves</p>
 
               <div class="leave-cta" id="leave-cta">
                 <p class="kicker">Next leave</p>
@@ -173,6 +180,7 @@
               <div class="check-list" id="check-list"></div>
               <button type="button" class="btn btn-ghost btn-block" id="btn-check-all" style="margin-bottom:0.5rem">Check all due</button>
               <button type="button" class="btn btn-primary btn-block" id="btn-to-seal" disabled>Step out</button>
+              <button type="button" class="btn btn-ghost btn-block" id="btn-leave-anyway" hidden style="margin-top:0.45rem">Leave anyway (remember misses)</button>
             </div>
           </section>
 
@@ -190,7 +198,7 @@
             <div class="stack" style="width:100%;max-width:16rem;margin:0 auto">
               <button type="button" class="btn btn-primary btn-block" id="btn-seal-open">Open the door</button>
               <button type="button" class="btn btn-ghost btn-block" id="btn-copy-leaving" hidden>Copy leaving status</button>
-              <button type="button" class="btn btn-ghost btn-block" id="btn-again" hidden>Another departure</button>
+              <button type="button" class="btn btn-ghost btn-block" id="btn-again" hidden>Back to my day</button>
             </div>
           </section>
 
