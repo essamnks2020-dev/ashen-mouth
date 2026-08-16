@@ -1,7 +1,7 @@
 {
   "name": "essam-portfolio",
   "version": "1.0.0",
-  "description": "Portfolio — Threshold + ASHEN MOUTH (+ archive studies)",
+  "description": "Portfolio — Outset + ASHEN MOUTH (+ archive studies)",
   "type": "module",
   "scripts": {
     "start": "node serve.mjs",
