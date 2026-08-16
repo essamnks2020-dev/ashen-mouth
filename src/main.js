@@ -155,7 +155,7 @@ function renderAnalysis() {
   if (ready) tips.push('<li>Plate is tempered. Copy when the words still sound like you.</li>');
   if (!tips.length) {
     tips.push('<li>Tap a <code>glowing</code> word to anneal it with a cooler phrase.</li>');
-    tips.push('<li>Hold <code>quench</code> to dunk the whole plate — steam means it’s working.</li>');
+    tips.push('<li>Hold <code>quench</code> (or mash it / hold Space) to dunk the plate — steam means it’s working.</li>');
     tips.push('<li>Copy unlocks when heat drops under the threshold. Friction is the feature.</li>');
   }
   els.tips.innerHTML = tips.join('');
@@ -219,24 +219,35 @@ function quenchStep() {
 
 function startQuench(e) {
   if (els.btnQuench.disabled) return;
-  e.preventDefault();
+  if (e && e.cancelable) e.preventDefault();
   unlockAudio();
   state.quenching = true;
   forge.setQuenching(true);
   els.btnQuench.classList.add('holding');
   els.btnQuench.textContent = 'Quenching…';
   quenchStep();
-  state.quenchTimer = setInterval(quenchStep, 420);
+  clearInterval(state.quenchTimer);
+  state.quenchTimer = setInterval(quenchStep, 380);
 }
 
 function endQuench() {
-  if (!state.quenching) return;
+  if (!state.quenching && !state.quenchTimer) return;
   state.quenching = false;
   forge.setQuenching(false);
   els.btnQuench.classList.remove('holding');
   els.btnQuench.textContent = 'Hold to quench';
   clearInterval(state.quenchTimer);
   state.quenchTimer = null;
+  metalTing();
+}
+
+/** Single click / Space pulse — one quench beat (automation-friendly) */
+function pulseQuench() {
+  if (els.btnQuench.disabled) return;
+  unlockAudio();
+  forge.setQuenching(true);
+  quenchStep();
+  forge.setQuenching(false);
   metalTing();
 }
 
@@ -387,11 +398,26 @@ document.addEventListener('click', (e) => {
 });
 
 const qEl = els.btnQuench;
-qEl.addEventListener('mousedown', startQuench);
-qEl.addEventListener('touchstart', startQuench, { passive: false });
-window.addEventListener('mouseup', endQuench);
-window.addEventListener('touchend', endQuench);
+qEl.addEventListener('pointerdown', (e) => {
+  if (e.button != null && e.button !== 0) return;
+  qEl.setPointerCapture?.(e.pointerId);
+  startQuench(e);
+});
+qEl.addEventListener('pointerup', endQuench);
+qEl.addEventListener('pointercancel', endQuench);
+qEl.addEventListener('lostpointercapture', endQuench);
 window.addEventListener('blur', endQuench);
+
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && state.screen === 'forge' && !e.repeat) {
+    if (document.activeElement === els.message) return;
+    e.preventDefault();
+    startQuench(e);
+  }
+});
+window.addEventListener('keyup', (e) => {
+  if (e.code === 'Space') endQuench();
+});
 
 els.btnCopy.addEventListener('click', async () => {
   if (els.btnCopy.disabled) return;
