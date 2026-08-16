@@ -651,6 +651,11 @@ const valid = ['enter', 'forge', 'vault', 'patterns', 'case'];
 nav(valid.includes(hash) ? hash : 'enter');
 renderAnalysis();
 
+window.addEventListener('hashchange', () => {
+  const h = (location.hash || '#enter').slice(1);
+  if (valid.includes(h) && h !== state.screen) nav(h);
+});
+
 // Expose a tiny QA hook
 window.__TEMPER = {
   analyze,
