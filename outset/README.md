@@ -1,8 +1,18 @@
 # Outset
 
-**Between home and the world.**
+**Leave home ready — every time.**
 
-Outset is the calm minute before you leave — destination weather, when to walk out the door, and a pack list that knows *this* day. Not another todo app. A departure companion.
+## What is this app? (simple)
+
+Outset is a small helper you open **right before you leave home**.
+
+It shows:
+1. **When to leave** so you are not late  
+2. **Weather where you're going** (not only at home)  
+3. **A short list of what to take** (keys, bag, umbrella if it rains…)
+
+You tap through, check your stuff, open the door, and go.  
+Set **weekly routines** (work, gym, class) once — then use Outset every morning and every time you go out again the same day.
 
 ## Run
 
@@ -11,21 +21,14 @@ node serve.mjs
 # → http://localhost:5173/outset/
 ```
 
-Local-first. Storage: `outset.v1`.
+## Why people keep using it
 
-## Brand (custom, no emoji)
+- Weekly routines repeat forever
+- Today's leaves list (morning + afternoon + evening)
+- Streak + “left today” + week count
+- Quick leave for errands with no calendar event
+- Pack presets and weather-aware items
 
-- Logo: `src/assets/logo.svg`
-- Cover: `src/assets/cover.svg`
-- Icons: `src/ui/icons.js` — stroke SVG system for pack, weather, travel, chrome
+## Brand
 
-## Ritual
-
-Wake → Home (countdown + briefing) → Out (mode + weather) → Pack → Go (seal)
-
-## QA
-
-```js
-window.__OUTSET.landDemo()
-window.__OUTSET.reset()
-```
+Custom logo, cover, and icons — no emoji.

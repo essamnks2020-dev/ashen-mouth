@@ -63,6 +63,12 @@ export const DESTINATIONS = [
   { id: "other", label: "Somewhere else", travelMin: 20, outdoor: true, note: "" },
 ];
 
+function atToday(h, m) {
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.getTime();
+}
+
 function nextUpcoming(h, m) {
   const d = new Date();
   d.setHours(h, m, 0, 0);
@@ -76,12 +82,48 @@ function defaultState() {
     homeLabel: "Home",
     items: structuredClone(DEFAULT_ITEMS),
     destinations: structuredClone(DESTINATIONS),
+    // one-off events
     events: [
-      { id: "e1", title: "Studio critique", at: nextUpcoming(10, 30), placeId: "school" },
-      { id: "e2", title: "Focus block", at: nextUpcoming(14, 0), placeId: "cafe" },
+      {
+        id: "e_soon",
+        title: "Something later today",
+        at: Date.now() + 2.5 * 3600e3,
+        placeId: "errand",
+      },
+    ],
+    // lasting weekly rhythm — this is what makes people keep using it
+    routines: [
+      {
+        id: "r_work",
+        title: "Work",
+        hour: 9,
+        minute: 0,
+        placeId: "work",
+        days: ["mon", "tue", "wed", "thu", "fri"],
+        enabled: true,
+      },
+      {
+        id: "r_gym",
+        title: "Gym",
+        hour: 18,
+        minute: 0,
+        placeId: "gym",
+        days: ["tue", "thu"],
+        enabled: true,
+      },
+      {
+        id: "r_weekend",
+        title: "Weekend out",
+        hour: 11,
+        minute: 0,
+        placeId: "cafe",
+        days: ["sat", "sun"],
+        enabled: true,
+      },
     ],
     checked: {},
-    selectedDestId: "school",
+    selectedDestId: "work",
+    activeEventId: null,
     travelMode: "transit",
     activePreset: "full",
     departures: [],
@@ -117,6 +159,7 @@ export function load() {
       items: Array.isArray(parsed.items) ? parsed.items : base.items,
       destinations: Array.isArray(parsed.destinations) ? parsed.destinations : base.destinations,
       events: Array.isArray(parsed.events) ? parsed.events : base.events,
+      routines: Array.isArray(parsed.routines) ? parsed.routines : base.routines,
       checked: parsed.checked && typeof parsed.checked === "object" ? parsed.checked : {},
       forgot: parsed.forgot && typeof parsed.forgot === "object" ? parsed.forgot : {},
       streaks: { ...base.streaks, ...(parsed.streaks || {}) },
@@ -187,28 +230,94 @@ export function itemsForToday(state, weatherHere, weatherDest, presetId) {
   });
 }
 
-export function nextEvent(state) {
+export function expandSchedule(state, daysAhead = 7) {
   const now = Date.now();
-  return (
-    (state.events || [])
-      .filter((e) => e.at > now - 5 * 60e3)
-      .sort((a, b) => a.at - b.at)[0] || null
-  );
+  const end = now + daysAhead * 864e5;
+  const out = [];
+
+  for (const e of state.events || []) {
+    if (e.at >= now - 10 * 60e3 && e.at <= end) {
+      out.push({ ...e, source: "once" });
+    }
+  }
+
+  for (const r of state.routines || []) {
+    if (r.enabled === false) continue;
+    for (let i = 0; i < daysAhead; i++) {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + i);
+      const day = WEEKDAYS[d.getDay()];
+      if (!(r.days || []).includes(day)) continue;
+      const at = new Date(d);
+      at.setHours(r.hour, r.minute, 0, 0);
+      const ts = at.getTime();
+      if (ts < now - 10 * 60e3 || ts > end) continue;
+      out.push({
+        id: `${r.id}_${dayStamp(d)}`,
+        title: r.title,
+        at: ts,
+        placeId: r.placeId,
+        routineId: r.id,
+        source: "routine",
+      });
+    }
+  }
+
+  return out.sort((a, b) => a.at - b.at);
 }
 
-export function upcomingEvents(state, limit = 5) {
-  const now = Date.now();
-  return (state.events || [])
-    .filter((e) => e.at > now - 5 * 60e3)
-    .sort((a, b) => a.at - b.at)
-    .slice(0, limit);
+export function todaysPlan(state) {
+  const today = dayStamp();
+  return expandSchedule(state, 2).filter((e) => dayStamp(new Date(e.at)) === today);
+}
+
+export function nextEvent(state) {
+  const plan = expandSchedule(state, 7);
+  if (state.activeEventId) {
+    const pinned = plan.find((e) => e.id === state.activeEventId);
+    if (pinned) return pinned;
+  }
+  return plan[0] || null;
+}
+
+export function upcomingEvents(state, limit = 8) {
+  return expandSchedule(state, 7).slice(0, limit);
+}
+
+export function departuresOnDay(state, stamp = dayStamp()) {
+  return (state.departures || []).filter((d) => dayStamp(new Date(d.at)) === stamp);
+}
+
+export function weekSealedCount(state) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - start.getDay());
+  const t0 = start.getTime();
+  return (state.departures || []).filter((d) => d.at >= t0).length;
 }
 
 export function leaveBy(event, dest, prefs, modeId) {
-  if (!event) return null;
+  if (!event) {
+    // leave-now: buffer only
+    const buffer = prefs?.leaveBufferMin ?? 8;
+    return Date.now() + buffer * 60e3;
+  }
   const travel = travelMinutes(dest, modeId || "transit");
   const buffer = prefs?.leaveBufferMin ?? 8;
   return event.at - (travel + buffer) * 60e3;
+}
+
+export function upsertRoutine(state, routine) {
+  const routines = [...(state.routines || [])];
+  const i = routines.findIndex((x) => x.id === routine.id);
+  if (i >= 0) routines[i] = { ...routines[i], ...routine };
+  else routines.push(routine);
+  return { ...state, routines };
+}
+
+export function removeRoutine(state, id) {
+  return { ...state, routines: (state.routines || []).filter((r) => r.id !== id) };
 }
 
 export function formatTime(ts) {
@@ -296,11 +405,11 @@ export function topForgot(state, n = 3) {
 
 export function layerHint(home, dest) {
   const t = Math.min(home.temp, dest.temp);
-  if (t < 6) return "Heavy layer — coat weather.";
-  if (t < 12) return "Light jacket recommended.";
-  if (Math.max(home.temp, dest.temp) >= 26) return "Dress light — warm out.";
-  if (dest.precip || home.precip) return "Waterproof layer if you have it.";
-  return "Ordinary clothes. You're fine.";
+  if (t < 6) return "Wear a warm coat.";
+  if (t < 12) return "Bring a light jacket.";
+  if (Math.max(home.temp, dest.temp) >= 26) return "It's warm — dress light.";
+  if (dest.precip || home.precip) return "It may rain — bring a cover.";
+  return "Normal clothes are fine.";
 }
 
 export function uid() {

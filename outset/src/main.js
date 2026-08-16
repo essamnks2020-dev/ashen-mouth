@@ -7,6 +7,9 @@ import {
   itemsForToday,
   nextEvent,
   upcomingEvents,
+  todaysPlan,
+  departuresOnDay,
+  weekSealedCount,
   leaveBy,
   formatTime,
   formatDay,
@@ -16,6 +19,7 @@ import {
   recordDeparture,
   upsertItem,
   upsertEvent,
+  upsertRoutine,
   travelMinutes,
   TRAVEL_MODES,
   PRESETS,
@@ -23,6 +27,7 @@ import {
   topForgot,
   dayStamp,
   uid,
+  WEEKDAYS,
 } from "./lib/store.js";
 import { weatherFor, compareWeather } from "./lib/weather.js";
 import { icon, wxIcon, modeIcon } from "./ui/icons.js";
@@ -186,13 +191,15 @@ function renderWeek() {
 function renderHome() {
   const { home, there, dest } = wxPair();
   const { ev, leave, mins, travel } = leaveInfo();
+  const todayLeaves = todaysPlan(state);
+  const leftToday = departuresOnDay(state).length;
 
   $("#greeting").textContent = `Good ${period()}, ${state.name}.`;
   $("#home-when").textContent = `${weekdayLabel()} · ${formatTime(Date.now())}`;
 
   $("#stat-streak").textContent = String(state.streaks?.current || 0);
-  $("#stat-best").textContent = String(state.streaks?.best || 0);
-  $("#stat-trips").textContent = String((state.departures || []).length);
+  $("#stat-today").textContent = String(leftToday);
+  $("#stat-week").textContent = String(weekSealedCount(state));
 
   $("#home-temp").textContent = `${home.temp}°`;
   $("#home-cond").textContent = `${home.label} · feel ${home.feels}° · wind ${home.wind}`;
@@ -201,18 +208,36 @@ function renderHome() {
   updateCountdownOnly();
 
   const headline = $("#leave-headline");
-  if (mins != null && mins < 0) headline.textContent = "Late — still leave clean.";
-  else if (mins != null && mins < 15) headline.textContent = "Door time is close.";
-  else if (ev) headline.textContent = `Toward ${dest.label}.`;
-  else headline.textContent = "Whenever you're ready.";
+  if (mins != null && mins < 0) headline.textContent = "You're late — still go ready.";
+  else if (mins != null && mins < 15) headline.textContent = "Time to head out soon.";
+  else if (ev) headline.textContent = `Next: ${ev.title}`;
+  else headline.textContent = "No leave planned — go when you want.";
 
   const tips = [];
   tips.push(layerHint(home, there));
-  if (there.precip || home.precip) tips.push("Umbrella will surface in Pack.");
+  if (there.precip || home.precip) tips.push("Take an umbrella.");
   const forgot = topForgot(state, 1)[0];
-  if (forgot?.item) tips.push(`You often miss ${forgot.item.label} — watch for it.`);
-  if (state.streaks?.current >= 3) tips.push(`${state.streaks.current}-day streak. Keep it gentle.`);
+  if (forgot?.item) tips.push(`You often forget ${forgot.item.label}.`);
+  if (state.streaks?.current >= 2) tips.push(`${state.streaks.current} days in a row — keep going.`);
+  if (!todayLeaves.length) tips.push("Add a weekly routine in Settings so tomorrow is ready.");
   $("#brief-text").textContent = tips.slice(0, 2).join(" ");
+
+  const plan = $("#today-plan");
+  if (!todayLeaves.length) {
+    plan.innerHTML = `<p class="plan-empty">Nothing else today. Use Quick leave for errands, or set weekly routines in Settings.</p>`;
+  } else {
+    plan.innerHTML = todayLeaves
+      .map((e) => {
+        const d = destById(e.placeId);
+        const on = (state.activeEventId || nextEvent(state)?.id) === e.id;
+        const tag = e.source === "routine" ? "weekly" : "once";
+        return `<button type="button" class="plan-row ${on ? "on" : ""}" data-event="${e.id}" data-place="${e.placeId}">
+          <span class="t">${formatTime(e.at)}</span>
+          <span class="body"><b>${escapeHtml(e.title)}</b><span>${escapeHtml(d?.label || "")} · ${tag}</span></span>
+        </button>`;
+      })
+      .join("");
+  }
 
   renderWeek();
 
@@ -220,10 +245,11 @@ function renderHome() {
   if (ev) {
     card.hidden = false;
     $("#next-title").textContent = ev.title;
-    $("#next-meta").textContent = `${formatTime(ev.at)} · ${dest.label} · ${travel} min via ${TRAVEL_MODES[state.travelMode]?.label}`;
+    $("#next-meta").textContent = `${formatTime(ev.at)} · ${dest.label} · ${travel} min · ${TRAVEL_MODES[state.travelMode]?.label}`;
     let leaveTxt = `Leave by ${formatTime(leave)}`;
     if (mins != null) {
-      if (mins > 0) leaveTxt += ` · in ${mins} min`;
+      if (mins > 120) leaveTxt += ` · in ${Math.round(mins / 60)}h`;
+      else if (mins > 0) leaveTxt += ` · in ${mins} min`;
       else if (mins > -12) leaveTxt += " · leave now";
       else leaveTxt += " · running late";
     }
@@ -356,43 +382,74 @@ function renderSeal() {
 
 function renderSettings() {
   const body = $("#settings-body");
-  const upcoming = upcomingEvents(state, 6);
+  const upcoming = upcomingEvents(state, 8);
+  const dayOpts = WEEKDAYS.map((d) => `<option value="${d}">${d}</option>`).join("");
   body.innerHTML = `
+    <p class="tip-card" style="margin-top:0"><b>Keep using Outset</b>
+      <span>Set weekly routines once (work, gym, class). Outset shows them every matching day — morning, afternoon, evening.</span>
+    </p>
+
     <div class="field">
       <label for="set-name">Your name</label>
       <input id="set-name" value="${escapeHtml(state.name)}" autocomplete="nickname" />
     </div>
     <div class="field">
-      <label for="set-home">Home label</label>
-      <input id="set-home" value="${escapeHtml(state.homeLabel)}" />
-    </div>
-    <div class="field">
-      <label for="set-buffer">Leave buffer (minutes early)</label>
+      <label for="set-buffer">Leave this many minutes early</label>
       <input id="set-buffer" type="number" min="3" max="45" value="${state.prefs.leaveBufferMin}" />
     </div>
 
-    <p class="section">Quick add event</p>
-    <div class="field"><label for="ev-title">Title</label><input id="ev-title" placeholder="Meeting, class…" /></div>
+    <p class="section">Weekly routines</p>
+    <div id="routine-list">
+      ${(state.routines || [])
+        .map((r) => {
+          const d = destById(r.placeId);
+          const days = (r.days || []).join(", ");
+          const time = `${String(r.hour).padStart(2, "0")}:${String(r.minute).padStart(2, "0")}`;
+          return `<div class="hist">
+            <b>${escapeHtml(r.title)} · ${time}</b>
+            <span>${escapeHtml(d?.label || "")} · ${escapeHtml(days)} · ${r.enabled === false ? "off" : "on"}</span>
+            <button type="button" class="btn btn-ghost" data-toggle-routine="${r.id}" style="margin-top:0.4rem;padding:0.45rem 0.7rem;font-size:0.72rem;border-radius:999px">
+              ${r.enabled === false ? "Turn on" : "Turn off"}
+            </button>
+          </div>`;
+        })
+        .join("") || `<p class="sub">No routines yet.</p>`}
+    </div>
+
+    <p class="section" style="margin-top:1rem">Add weekly routine</p>
+    <div class="field"><label for="rt-title">Name</label><input id="rt-title" placeholder="Work, class, gym…" /></div>
+    <div class="field"><label for="rt-hour">Hour (0–23)</label><input id="rt-hour" type="number" min="0" max="23" value="9" /></div>
+    <div class="field"><label for="rt-min">Minute</label><input id="rt-min" type="number" min="0" max="59" value="0" /></div>
+    <div class="field"><label for="rt-place">Place</label>
+      <select id="rt-place">${state.destinations.map((d) => `<option value="${d.id}">${escapeHtml(d.label)}</option>`).join("")}</select>
+    </div>
+    <div class="field"><label for="rt-days">Days (hold Ctrl/Cmd for many)</label>
+      <select id="rt-days" multiple size="4">${dayOpts}</select>
+    </div>
+    <button type="button" class="btn btn-primary btn-block" id="btn-add-routine">Save routine</button>
+
+    <p class="section" style="margin-top:1.2rem">One-time leave</p>
+    <div class="field"><label for="ev-title">Title</label><input id="ev-title" placeholder="Meeting…" /></div>
     <div class="field"><label for="ev-time">Starts in (minutes)</label><input id="ev-time" type="number" min="15" max="720" value="90" /></div>
-    <div class="field">
-      <label for="ev-place">Place</label>
+    <div class="field"><label for="ev-place">Place</label>
       <select id="ev-place">${state.destinations.map((d) => `<option value="${d.id}">${escapeHtml(d.label)}</option>`).join("")}</select>
     </div>
-    <button type="button" class="btn btn-primary btn-block" id="btn-add-event">Add to calendar</button>
+    <button type="button" class="btn btn-ghost btn-block" id="btn-add-event">Add one-time event</button>
 
-    <p class="section" style="margin-top:1.2rem">Upcoming</p>
+    <p class="section" style="margin-top:1.2rem">Coming up</p>
     ${
       upcoming.length
         ? upcoming
             .map((e) => {
               const d = destById(e.placeId);
-              return `<div class="hist"><b>${escapeHtml(e.title)}</b><span>${formatDay(e.at)} · ${formatTime(e.at)} · ${escapeHtml(d?.label || "")}</span></div>`;
+              const tag = e.source === "routine" ? "weekly" : "once";
+              return `<div class="hist"><b>${escapeHtml(e.title)}</b><span>${formatDay(e.at)} · ${formatTime(e.at)} · ${escapeHtml(d?.label || "")} · ${tag}</span></div>`;
             })
             .join("")
-        : `<p class="sub">No upcoming events.</p>`
+        : `<p class="sub">Nothing upcoming. Add a routine.</p>`
     }
 
-    <p class="section" style="margin-top:1.2rem">Checklist</p>
+    <p class="section" style="margin-top:1.2rem">What you pack</p>
     <div id="item-editor">
       ${state.items
         .map(
@@ -412,21 +469,48 @@ function renderSettings() {
       <input id="new-item" placeholder="Lunch box, badge…" />
     </div>
     <button type="button" class="btn btn-primary btn-block" id="btn-add-item">Add to pack</button>
-    <button type="button" class="btn btn-ghost btn-block" id="btn-reset-checks" style="margin-top:0.55rem">Reset today's checks</button>
+    <button type="button" class="btn btn-ghost btn-block" id="btn-reset-checks" style="margin-top:0.55rem">Clear checks</button>
   `;
 
   $("#set-name").onchange = (e) => {
     state = { ...state, name: e.target.value.trim() || "Friend" };
     persist();
   };
-  $("#set-home").onchange = (e) => {
-    state = { ...state, homeLabel: e.target.value.trim() || "Home" };
-    persist();
-  };
   $("#set-buffer").onchange = (e) => {
     const n = Math.max(3, Math.min(45, Number(e.target.value) || 8));
     state = { ...state, prefs: { ...state.prefs, leaveBufferMin: n } };
     persist();
+  };
+  $("#routine-list").onclick = (e) => {
+    const id = e.target.closest("[data-toggle-routine]")?.dataset.toggleRoutine;
+    if (!id) return;
+    const r = (state.routines || []).find((x) => x.id === id);
+    if (!r) return;
+    state = upsertRoutine(state, { ...r, enabled: r.enabled === false });
+    persist();
+    tap();
+    renderSettings();
+  };
+  $("#btn-add-routine").onclick = () => {
+    const title = $("#rt-title").value.trim() || "Routine";
+    const hour = Math.max(0, Math.min(23, Number($("#rt-hour").value) || 9));
+    const minute = Math.max(0, Math.min(59, Number($("#rt-min").value) || 0));
+    const placeId = $("#rt-place").value;
+    const selected = [...$("#rt-days").selectedOptions].map((o) => o.value);
+    const days = selected.length ? selected : ["mon", "tue", "wed", "thu", "fri"];
+    state = upsertRoutine(state, {
+      id: uid(),
+      title,
+      hour,
+      minute,
+      placeId,
+      days,
+      enabled: true,
+    });
+    persist();
+    checkOn();
+    toast("Weekly routine saved");
+    renderSettings();
   };
   $("#btn-add-event").onclick = () => {
     const title = $("#ev-title").value.trim() || "Event";
@@ -440,7 +524,7 @@ function renderSettings() {
     });
     persist();
     checkOn();
-    toast("Event added");
+    toast("One-time event added");
     renderSettings();
   };
   $("#item-editor").onclick = (e) => {
@@ -459,7 +543,7 @@ function renderSettings() {
     state = upsertItem(state, {
       id: uid(),
       label,
-      days: ["sun", "mon", "tue", "wed", "thu", "fri", "sat"],
+      days: WEEKDAYS.slice(),
       icon: "item",
       enabled: true,
     });
@@ -629,6 +713,27 @@ $("#btn-start-ritual").onclick = () => {
   sealed = false;
   showScreen("dest");
 };
+$("#btn-leave-now").onclick = () => {
+  tap();
+  sealed = false;
+  state = {
+    ...state,
+    activeEventId: null,
+    selectedDestId: state.selectedDestId || "errand",
+  };
+  // ephemeral quick leave — pin a synthetic "now" event via one-off
+  const id = uid();
+  state = upsertEvent(state, {
+    id,
+    title: "Quick leave",
+    at: Date.now() + 25 * 60e3,
+    placeId: state.selectedDestId || "errand",
+  });
+  state = { ...state, activeEventId: id };
+  persist();
+  showScreen("dest");
+  toast("Quick leave ready");
+};
 $("#btn-to-pack").onclick = () => {
   tap();
   showScreen("check");
@@ -665,6 +770,21 @@ $("#btn-check-all").onclick = () => {
   checkOn();
   toast("All due items checked");
 };
+
+$("#today-plan")?.addEventListener("click", (e) => {
+  const row = e.target.closest("[data-event]");
+  if (!row) return;
+  state = {
+    ...state,
+    activeEventId: row.dataset.event,
+    selectedDestId: row.dataset.place || state.selectedDestId,
+  };
+  ritualDestId = state.selectedDestId;
+  persist();
+  tap();
+  renderHome();
+  toast("Selected for leaving");
+});
 
 $("#mode-row")?.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-mode]");
