@@ -134,7 +134,7 @@ function updateCountdownOnly() {
   const windowMin = Math.max(travel + (state.prefs.leaveBufferMin || 8), 30);
   const p = Math.max(0, Math.min(100, ((windowMin - Math.max(mins, 0)) / windowMin) * 100));
   ring.style.setProperty("--p", String(p));
-  label.textContent = mins > 0 ? `${mins}m` : mins > -12 ? "NOW" : "LATE";
+  label.textContent = mins > 120 ? `${Math.round(mins / 60)}h` : mins > 0 ? `${mins}m` : mins > -12 ? "NOW" : "LATE";
   const strong = $("#leave-cd-strong");
   const sub = $("#leave-cd-sub");
   if (strong) strong.textContent = `Leave by ${formatTime(leave)}`;
