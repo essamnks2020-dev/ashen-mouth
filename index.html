@@ -1,175 +1,217 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="description" content="ASHEN MOUTH — 14 Ashen Lane. The house learned to listen. Whisper to close the flue. Never shout." />
-<meta name="theme-color" content="#07080b" />
-<title>ASHEN MOUTH</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="./src/ui/style.css" />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2307080b' width='100' height='100'/><rect x='30' y='40' width='40' height='32' fill='none' stroke='%23c44b28' stroke-width='4'/><rect x='38' y='48' width='5' height='20' fill='%236a2a18'/><rect x='48' y='48' width='5' height='20' fill='%236a2a18'/><rect x='58' y='48' width='5' height='20' fill='%236a2a18'/></svg>" />
-<script type="importmap">
-{
-  "imports": {
-    "three": "./vendor/three/build/three.module.js",
-    "three/addons/": "./vendor/three/examples/jsm/"
-  }
-}
-</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Essam — interaction craft. Threshold, ASHEN MOUTH, and more." />
+  <meta name="theme-color" content="#050403" />
+  <title>Essam — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./portfolio.css" />
 </head>
 <body>
-<div id="viewport">
-  <canvas id="gl"></canvas>
-</div>
+  <canvas id="atmos" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="hero-plane" aria-hidden="true"></div>
+  <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-<div id="boot" class="screen active">
-  <div class="boot-inner">
-    <div class="ember-rule" aria-hidden="true"></div>
-    <div class="boot-logo">ASHEN<br>MOUTH</div>
-    <div class="boot-bar"><i id="boot-fill"></i></div>
-    <div class="boot-status" id="boot-status">the flue is still open…</div>
-  </div>
-</div>
-
-<div id="title" class="screen">
-  <div class="title-veil"></div>
-  <div class="title-col">
-    <p class="tl-addr">14 ASHEN LANE  ·  THE NIGHT BEFORE SALE</p>
-    <h1 class="tl-main">ASHEN<br>MOUTH</h1>
-    <p class="tl-tag">Your mother burned his voice in the grate. The house kept it. Whisper if you must. Never shout.</p>
-    <nav class="title-nav">
-      <button class="tm" data-act="play">
-        <b>GO IN</b>
-        <span>The key is already in your hand</span>
-      </button>
-      <button class="tm" data-act="settings">
-        <b>THE HOUSE, QUIETER</b>
-        <span>Picture, hearing, and how you look</span>
-      </button>
+  <header class="top">
+    <a class="mark" href="#top" data-magnetic>Essam</a>
+    <nav>
+      <a href="#work" data-magnetic>Work</a>
+      <a href="#craft" data-magnetic>Craft</a>
+      <a href="#about" data-magnetic>About</a>
     </nav>
-    <p class="tl-foot">Walk  WASD &nbsp;·&nbsp; Quiet step  SHIFT &nbsp;·&nbsp; Crouch  CTRL &nbsp;·&nbsp; Use  E &nbsp;·&nbsp; Light  F &nbsp;·&nbsp; Known words  T &nbsp;·&nbsp; Whisper V &nbsp; Speak B &nbsp; Shout N &nbsp;·&nbsp; Pause  ESC</p>
-  </div>
-</div>
+  </header>
 
-<div id="intro" class="screen">
-  <div class="intro-radio" id="intro-radio"></div>
-  <div class="intro-card" id="intro-card"></div>
-  <button class="intro-skip" id="intro-skip">LEAVE THIS PART</button>
-</div>
-
-<div id="hud" class="overlay">
-  <div class="hud-top">
-    <div class="frag" id="hud-frag">— — —</div>
-    <div class="fork" id="hud-fork"></div>
-  </div>
-  <div class="cross" id="cross"></div>
-  <div class="prompt" id="prompt"></div>
-  <div class="inspect" id="inspect">
-    <div class="ins-title" id="ins-title"></div>
-    <div class="ins-body" id="ins-body"></div>
-  </div>
-  <div class="hint" id="hint"></div>
-  <div class="hud-bot">
-    <div class="meter">
-      <span>HOW LOUD YOU ARE</span>
-      <i><b id="meter-fill"></b></i>
-    </div>
-    <div class="mic" id="mic-pill">MIC</div>
-    <div class="listen" id="listen-pill">IT TURNED ITS HEAD</div>
-  </div>
-  <div id="phrases" class="phrases">
-    <div class="ph-h">What you have learned  ·  1–9 while holding V</div>
-    <div id="phrase-list"></div>
-  </div>
-  <div class="mobile-hint" id="mobile-hint">Left to walk · right to look · tap the middle to use</div>
-</div>
-
-<div id="pause" class="screen">
-  <div class="panel">
-    <p class="panel-kicker">The flue is still open</p>
-    <h2>HOLD STILL</h2>
-    <button class="tm" data-act="resume"><b>KEEP GOING</b><span>The house has not forgotten you</span></button>
-    <button class="tm" data-act="settings"><b>THE HOUSE, QUIETER</b><span>Picture and hearing</span></button>
-    <button class="tm" data-act="menu"><b>LEAVE</b><span>The key stays in the door</span></button>
-  </div>
-</div>
-
-<div id="settings" class="screen">
-  <div class="panel wide">
-    <div class="panel-head">
-      <div>
-        <p class="panel-kicker">14 Ashen Lane</p>
-        <h2>HOW THE HOUSE FEELS</h2>
+  <main id="top">
+    <section class="hero">
+      <p class="brand-lockup" aria-label="Essam">Essam</p>
+      <h1 class="hero-title">
+        Mechanics you can <span class="italic">feel</span> in your hands.
+      </h1>
+      <p class="lede">
+        Daily rituals and listening-horror — interfaces that refuse to be generic.
+      </p>
+      <div class="hero-cta">
+        <a class="btn primary" href="#work" data-magnetic data-cursor="Enter">Enter the work</a>
+        <a class="btn ghost" href="./threshold/" data-magnetic data-cursor="Door">Open Threshold</a>
       </div>
-      <button class="ghost" data-act="back">BACK</button>
+    </section>
+
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>LEAVE-BY MATH</span><span>·</span>
+        <span>DESTINATION WEATHER</span><span>·</span>
+        <span>DAY-AWARE PACK</span><span>·</span>
+        <span>DOOR SEAL</span><span>·</span>
+        <span>LISTENING HORROR</span><span>·</span>
+        <span>INTENTIONAL FRICTION</span><span>·</span>
+        <span>LEAVE-BY MATH</span><span>·</span>
+        <span>DESTINATION WEATHER</span><span>·</span>
+        <span>DAY-AWARE PACK</span><span>·</span>
+        <span>DOOR SEAL</span><span>·</span>
+        <span>LISTENING HORROR</span><span>·</span>
+        <span>INTENTIONAL FRICTION</span><span>·</span>
+      </div>
     </div>
 
-    <section class="set-block">
-      <h3>Picture</h3>
-      <label>HOW SHARP
-        <select id="set-quality">
-          <option value="high">Clean  —  best picture, a little hungrier</option>
-          <option value="medium">Steady  —  quieter on older machines</option>
-          <option value="low">Spare  —  if the frame starts to drag</option>
-        </select>
-      </label>
-      <label>HOW FAR YOU SEE
-        <div class="range-row">
-          <input id="set-fov" type="range" min="58" max="78" step="1" />
-          <em id="set-fov-val">68</em>
+    <section id="work" class="work">
+      <header class="section-head">
+        <p class="eyebrow"><span class="pulse-dot"></span> Selected work</p>
+        <h2>Lead piece for daily life.<br>Same obsession with precise interaction.</h2>
+      </header>
+
+      <article class="project threshold" data-reveal>
+        <a class="project-visual" href="./threshold/" data-cursor="Door">
+          <div class="threshold-glow"></div>
+          <div class="visual-grid doorway"></div>
+          <div class="visual-silhouette threshold-sil" aria-hidden="true"></div>
+          <span class="project-kicker">01 · Mobile · Local-first</span>
+          <h3>THRESH<br>OLD</h3>
+          <span class="visual-cta">Open →</span>
+        </a>
+        <div class="project-body">
+          <p class="tag">Departure ritual · weather · leave-by · seal</p>
+          <h4>The last thirty seconds before you leave.</h4>
+          <p>
+            Not another todo list. Threshold is the doorway moment: weather where you're going
+            vs home, leave-by from the next place, a checklist that knows Tuesday is gym day —
+            then you open the door and seal the departure.
+          </p>
+          <ul class="meta">
+            <li>Home vs destination weather split</li>
+            <li>Leave-by from event + travel + buffer</li>
+            <li>Weekday + rain-aware pack · door seal history</li>
+          </ul>
+          <div class="actions">
+            <a class="btn primary" href="./threshold/" data-magnetic>Open Threshold</a>
+            <a class="btn ghost" href="./threshold/CASE-STUDY.md" data-magnetic>Case study</a>
+          </div>
         </div>
-      </label>
-      <label class="chk"><input type="checkbox" id="set-bob" /> SOFT HEAD MOTION <span>a little rise when you walk, like a person</span></label>
+      </article>
+
+      <article class="project ashen" data-reveal>
+        <a class="project-visual" href="./ashen-mouth/" data-cursor="Play">
+          <div class="ashen-glow"></div>
+          <div class="visual-grid"></div>
+          <div class="visual-silhouette ashen-sil" aria-hidden="true"></div>
+          <span class="project-kicker">02 · Game · WebGL</span>
+          <h3>ASHEN<br>MOUTH</h3>
+          <span class="visual-cta">Play →</span>
+        </a>
+        <div class="project-body">
+          <p class="tag">Three.js · microphone stealth · authored house</p>
+          <h4>Silence is stealth. The grate is the mouth.</h4>
+          <p>
+            First-person listening-horror at <em>14 Ashen Lane</em>. The Listener hunts by sound,
+            not sight. Find the hush-name. Whisper it at the parlor grate. Never shout your own name.
+          </p>
+          <ul class="meta">
+            <li>Yard → porch → rooms → cellar, hand-authored</li>
+            <li>Mic + V/B/N voice · damper closes on win</li>
+            <li>Kitchen L-run, chimney breast, panel doors, closed stairs</li>
+          </ul>
+          <div class="actions">
+            <a class="btn primary" href="./ashen-mouth/" data-magnetic>Play the game</a>
+            <a class="btn ghost" href="./ashen-mouth/README.md" data-magnetic>Readme</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="project homeport archive" data-reveal>
+        <a class="project-visual" href="./homeport/" data-cursor="Harbor">
+          <div class="homeport-glow"></div>
+          <div class="visual-grid harbor"></div>
+          <div class="visual-silhouette homeport-sil" aria-hidden="true"></div>
+          <span class="project-kicker">Archive · Mobile</span>
+          <h3>HOME<br>PORT</h3>
+          <span class="visual-cta">Open →</span>
+        </a>
+        <div class="project-body">
+          <p class="tag">Offshore logbook · dock prices · quota</p>
+          <h4>Built for the boat — kept as craft study.</h4>
+          <p>
+            Earlier exploration: profit after fuel and crew, dock scenarios, quota pressure.
+            Still playable; Threshold is the daily-life lead.
+          </p>
+          <div class="actions">
+            <a class="btn ghost" href="./homeport/" data-magnetic>Open Homeport</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="project temper archive" data-reveal>
+        <a class="project-visual" href="./temper/" data-cursor="Forge">
+          <div class="temper-embers"></div>
+          <div class="visual-grid quench"></div>
+          <div class="visual-silhouette temper-sil" aria-hidden="true"></div>
+          <span class="project-kicker">Archive · Utility</span>
+          <h3>TEMPER</h3>
+          <span class="visual-cta">Forge →</span>
+        </a>
+        <div class="project-body">
+          <p class="tag">Message cooling · intentional friction</p>
+          <h4>Cool the message before you send it.</h4>
+          <p>
+            Earlier forge for heated words. Kept as an interaction study; not the school lead.
+          </p>
+          <div class="actions">
+            <a class="btn ghost" href="./temper/" data-magnetic>Open TEMPER</a>
+          </div>
+        </div>
+      </article>
     </section>
 
-    <section class="set-block">
-      <h3>Looking</h3>
-      <label>HOW QUICKLY THE EYE MOVES
-        <div class="range-row">
-          <input id="set-sens" type="range" min="0.3" max="2.2" step="0.05" />
-          <em id="set-sens-val">1.00</em>
-        </div>
-      </label>
-      <label class="chk"><input type="checkbox" id="set-inverty" /> LOOK UP BY MOVING DOWN</label>
+    <section id="craft" class="craft" data-reveal>
+      <header class="section-head">
+        <p class="eyebrow">Craft principles</p>
+        <h2>What I refuse to ship.</h2>
+      </header>
+      <div class="craft-grid">
+        <article>
+          <h3>No generic chrome</h3>
+          <p>If you can swap the logo and it looks like every other SaaS, it’s dead on arrival.</p>
+        </article>
+        <article>
+          <h3>Ritual over queue</h3>
+          <p>The last thirty seconds deserve a doorway — not another infinite checklist.</p>
+        </article>
+        <article>
+          <h3>Feel before features</h3>
+          <p>Light spill, dust, door swing — sensory proof that something happened.</p>
+        </article>
+        <article>
+          <h3>Privacy as structure</h3>
+          <p>Local-first where the moment is intimate. No analytics SDK as “insights.”</p>
+        </article>
+      </div>
     </section>
 
-    <section class="set-block">
-      <h3>Hearing</h3>
-      <label>HOW LOUD THE HOUSE IS
-        <div class="range-row">
-          <input id="set-master" type="range" min="0" max="1" step="0.01" />
-          <em id="set-master-val">85%</em>
-        </div>
-      </label>
-      <label class="chk"><input type="checkbox" id="set-mute" /> SILENCE EVERYTHING</label>
-      <label class="chk"><input type="checkbox" id="set-mic" /> LET THE HOUSE HEAR THIS ROOM <span>your microphone. If you refuse it, the keys still work.</span></label>
+    <section id="about" class="about" data-reveal>
+      <h2>About</h2>
+      <p>
+        I’m <strong>Essam</strong>. I care about <em>mechanics you can feel</em> — not dashboards,
+        not empty onboarding walls. Rituals for daily life. Games that listen.
+      </p>
+      <div class="proof-row" aria-label="Proof points">
+        <div><b>01</b><span>Lead: Threshold</span></div>
+        <div><b>0</b><span>Purple SaaS clones</span></div>
+        <div><b>100%</b><span>Local-first where it matters</span></div>
+      </div>
+      <div class="about-links">
+        <a class="btn primary" href="./threshold/" data-magnetic>Try Threshold</a>
+        <a class="btn ghost" href="./ashen-mouth/" data-magnetic>Play ASHEN MOUTH</a>
+      </div>
     </section>
+  </main>
 
-    <p class="set-note">If the microphone is closed, hold <b>V</b> to whisper, <b>B</b> to speak, <b>N</b> to shout. Open the words you have found with <b>T</b>. The house does not care which you use. It only cares how large the sound is.</p>
-  </div>
-</div>
-
-<div id="win" class="screen">
-  <div class="end-col">
-    <p class="tl-addr">THE FLUE CLOSES</p>
-    <h1 class="tl-main sm">STILL</h1>
-    <p class="end-body">You said her name the way she asked — small, at the mouth. The grate cools. Somewhere a clock keeps going. Morning can happen here now. The house, for once, does not answer.</p>
-    <button class="tm" data-act="again"><b>WALK IT AGAIN</b><span>The key still fits</span></button>
-  </div>
-</div>
-
-<div id="lose" class="screen">
-  <div class="end-col">
-    <p class="tl-addr">SOMEONE ELSE WILL BE SENT</p>
-    <h1 class="tl-main sm">TUCKED IN</h1>
-    <p class="end-body">It leaned over you the way she used to, when the fever was high. The grate was warm. The house will wait. It always does.</p>
-    <button class="tm" data-act="again"><b>TRY THE KEY AGAIN</b><span>Quieter this time</span></button>
-  </div>
-</div>
-
-<script type="module" src="./src/main.js"></script>
+  <footer>
+    <span>© Essam · Interaction craft</span>
+    <span>THRESHOLD · ASHEN MOUTH</span>
+  </footer>
+  <script type="module" src="./portfolio.js"></script>
 </body>
 </html>

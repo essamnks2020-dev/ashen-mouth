@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="ASHEN MOUTH — 14 Ashen Lane. The house learned to listen. Whisper to close the flue. Never shout." />
+<meta name="theme-color" content="#07080b" />
+<title>ASHEN MOUTH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./src/ui/style.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2307080b' width='100' height='100'/><rect x='30' y='40' width='40' height='32' fill='none' stroke='%23c44b28' stroke-width='4'/><rect x='38' y='48' width='5' height='20' fill='%236a2a18'/><rect x='48' y='48' width='5' height='20' fill='%236a2a18'/><rect x='58' y='48' width='5' height='20' fill='%236a2a18'/></svg>" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/build/three.module.js",
+    "three/addons/": "./vendor/three/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="viewport">
+  <canvas id="gl"></canvas>
+</div>
+
+<div id="boot" class="screen active">
+  <div class="boot-inner">
+    <div class="ember-rule" aria-hidden="true"></div>
+    <div class="boot-logo">ASHEN<br>MOUTH</div>
+    <div class="boot-bar"><i id="boot-fill"></i></div>
+    <div class="boot-status" id="boot-status">the flue is still open…</div>
+  </div>
+</div>
+
+<div id="title" class="screen">
+  <div class="title-veil"></div>
+  <div class="title-col">
+    <p class="tl-addr">14 ASHEN LANE  ·  THE NIGHT BEFORE SALE</p>
+    <h1 class="tl-main">ASHEN<br>MOUTH</h1>
+    <p class="tl-tag">Your mother burned his voice in the grate. The house kept it. Whisper if you must. Never shout.</p>
+    <nav class="title-nav">
+      <button class="tm" data-act="play">
+        <b>GO IN</b>
+        <span>The key is already in your hand</span>
+      </button>
+      <button class="tm" data-act="settings">
+        <b>THE HOUSE, QUIETER</b>
+        <span>Picture, hearing, and how you look</span>
+      </button>
+    </nav>
+    <p class="tl-foot">Walk  WASD &nbsp;·&nbsp; Quiet step  SHIFT &nbsp;·&nbsp; Crouch  CTRL &nbsp;·&nbsp; Use  E &nbsp;·&nbsp; Light  F &nbsp;·&nbsp; Known words  T &nbsp;·&nbsp; Whisper V &nbsp; Speak B &nbsp; Shout N &nbsp;·&nbsp; Pause  ESC</p>
+  </div>
+</div>
+
+<div id="intro" class="screen">
+  <div class="intro-radio" id="intro-radio"></div>
+  <div class="intro-card" id="intro-card"></div>
+  <button class="intro-skip" id="intro-skip">LEAVE THIS PART</button>
+</div>
+
+<div id="hud" class="overlay">
+  <div class="hud-top">
+    <div class="frag" id="hud-frag">— — —</div>
+    <div class="fork" id="hud-fork"></div>
+  </div>
+  <div class="cross" id="cross"></div>
+  <div class="prompt" id="prompt"></div>
+  <div class="inspect" id="inspect">
+    <div class="ins-title" id="ins-title"></div>
+    <div class="ins-body" id="ins-body"></div>
+  </div>
+  <div class="hint" id="hint"></div>
+  <div class="hud-bot">
+    <div class="meter">
+      <span>HOW LOUD YOU ARE</span>
+      <i><b id="meter-fill"></b></i>
+    </div>
+    <div class="mic" id="mic-pill">MIC</div>
+    <div class="listen" id="listen-pill">IT TURNED ITS HEAD</div>
+  </div>
+  <div id="phrases" class="phrases">
+    <div class="ph-h">What you have learned  ·  1–9 while holding V</div>
+    <div id="phrase-list"></div>
+  </div>
+  <div class="mobile-hint" id="mobile-hint">Left to walk · right to look · tap the middle to use</div>
+</div>
+
+<div id="pause" class="screen">
+  <div class="panel">
+    <p class="panel-kicker">The flue is still open</p>
+    <h2>HOLD STILL</h2>
+    <button class="tm" data-act="resume"><b>KEEP GOING</b><span>The house has not forgotten you</span></button>
+    <button class="tm" data-act="settings"><b>THE HOUSE, QUIETER</b><span>Picture and hearing</span></button>
+    <button class="tm" data-act="menu"><b>LEAVE</b><span>The key stays in the door</span></button>
+  </div>
+</div>
+
+<div id="settings" class="screen">
+  <div class="panel wide">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">14 Ashen Lane</p>
+        <h2>HOW THE HOUSE FEELS</h2>
+      </div>
+      <button class="ghost" data-act="back">BACK</button>
+    </div>
+
+    <section class="set-block">
+      <h3>Picture</h3>
+      <label>HOW SHARP
+        <select id="set-quality">
+          <option value="high">Clean  —  best picture, a little hungrier</option>
+          <option value="medium">Steady  —  quieter on older machines</option>
+          <option value="low">Spare  —  if the frame starts to drag</option>
+        </select>
+      </label>
+      <label>HOW FAR YOU SEE
+        <div class="range-row">
+          <input id="set-fov" type="range" min="58" max="78" step="1" />
+          <em id="set-fov-val">68</em>
+        </div>
+      </label>
+      <label class="chk"><input type="checkbox" id="set-bob" /> SOFT HEAD MOTION <span>a little rise when you walk, like a person</span></label>
+    </section>
+
+    <section class="set-block">
+      <h3>Looking</h3>
+      <label>HOW QUICKLY THE EYE MOVES
+        <div class="range-row">
+          <input id="set-sens" type="range" min="0.3" max="2.2" step="0.05" />
+          <em id="set-sens-val">1.00</em>
+        </div>
+      </label>
+      <label class="chk"><input type="checkbox" id="set-inverty" /> LOOK UP BY MOVING DOWN</label>
+    </section>
+
+    <section class="set-block">
+      <h3>Hearing</h3>
+      <label>HOW LOUD THE HOUSE IS
+        <div class="range-row">
+          <input id="set-master" type="range" min="0" max="1" step="0.01" />
+          <em id="set-master-val">85%</em>
+        </div>
+      </label>
+      <label class="chk"><input type="checkbox" id="set-mute" /> SILENCE EVERYTHING</label>
+      <label class="chk"><input type="checkbox" id="set-mic" /> LET THE HOUSE HEAR THIS ROOM <span>your microphone. If you refuse it, the keys still work.</span></label>
+    </section>
+
+    <p class="set-note">If the microphone is closed, hold <b>V</b> to whisper, <b>B</b> to speak, <b>N</b> to shout. Open the words you have found with <b>T</b>. The house does not care which you use. It only cares how large the sound is.</p>
+  </div>
+</div>
+
+<div id="win" class="screen">
+  <div class="end-col">
+    <p class="tl-addr">THE FLUE CLOSES</p>
+    <h1 class="tl-main sm">STILL</h1>
+    <p class="end-body">You said her name the way she asked — small, at the mouth. The grate cools. Somewhere a clock keeps going. Morning can happen here now. The house, for once, does not answer.</p>
+    <button class="tm" data-act="again"><b>WALK IT AGAIN</b><span>The key still fits</span></button>
+  </div>
+</div>
+
+<div id="lose" class="screen">
+  <div class="end-col">
+    <p class="tl-addr">SOMEONE ELSE WILL BE SENT</p>
+    <h1 class="tl-main sm">TUCKED IN</h1>
+    <p class="end-body">It leaned over you the way she used to, when the fever was high. The grate was warm. The house will wait. It always does.</p>
+    <button class="tm" data-act="again"><b>TRY THE KEY AGAIN</b><span>Quieter this time</span></button>
+  </div>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
