@@ -4,110 +4,171 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="description" content="Essam — interaction craft. ASHEN MOUTH and TEMPER." />
-  <meta name="theme-color" content="#070605" />
+  <meta name="theme-color" content="#050403" />
   <title>Essam — Portfolio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@600;700;800&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./portfolio.css" />
 </head>
 <body>
+  <canvas id="atmos" aria-hidden="true"></canvas>
   <div class="grain" aria-hidden="true"></div>
+  <div class="hero-plane" aria-hidden="true"></div>
+  <div class="cursor" id="cursor" aria-hidden="true"></div>
+
   <header class="top">
-    <a class="mark" href="#top">Essam</a>
+    <a class="mark" href="#top" data-magnetic>Essam</a>
     <nav>
-      <a href="#work">Work</a>
-      <a href="#about">About</a>
-      <a href="mailto:hello@essam.dev">Contact</a>
+      <a href="#work" data-magnetic>Work</a>
+      <a href="#craft" data-magnetic>Craft</a>
+      <a href="#about" data-magnetic>About</a>
     </nav>
   </header>
 
   <main id="top">
     <section class="hero">
-      <p class="eyebrow">Interaction craft · games &amp; utilities</p>
-      <h1>Make the pause<br><em>feel like a product.</em></h1>
+      <p class="brand-lockup" aria-label="Essam">Essam</p>
+      <h1 class="hero-title">
+        Mechanics you can <span class="italic">feel</span> in your hands.
+      </h1>
       <p class="lede">
-        I build things people <strong>feel in their hands</strong> —
-        listening-horror, intentional friction, mechanics you remember.
+        Listening-horror and intentional friction — interfaces that refuse to be generic.
       </p>
       <div class="hero-cta">
-        <a class="btn primary" href="#work">See the work</a>
-        <a class="btn ghost" href="./temper/">Open TEMPER</a>
+        <a class="btn primary" href="#work" data-magnetic data-cursor="Enter">Enter the work</a>
+        <a class="btn ghost" href="./temper/" data-magnetic data-cursor="Forge">Open TEMPER</a>
       </div>
     </section>
 
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>LISTENING HORROR</span><span>·</span>
+        <span>INTENTIONAL FRICTION</span><span>·</span>
+        <span>WORD-LEVEL HEAT</span><span>·</span>
+        <span>MICROPHONE STEALTH</span><span>·</span>
+        <span>FORGE MECHANICS</span><span>·</span>
+        <span>PHRASE-AWARE QUENCH</span><span>·</span>
+        <span>AUTHORED HOUSE</span><span>·</span>
+        <span>LISTENING HORROR</span><span>·</span>
+        <span>INTENTIONAL FRICTION</span><span>·</span>
+        <span>WORD-LEVEL HEAT</span><span>·</span>
+        <span>MICROPHONE STEALTH</span><span>·</span>
+        <span>FORGE MECHANICS</span><span>·</span>
+        <span>PHRASE-AWARE QUENCH</span><span>·</span>
+        <span>AUTHORED HOUSE</span><span>·</span>
+      </div>
+    </div>
+
     <section id="work" class="work">
       <header class="section-head">
-        <h2>Selected work</h2>
-        <p>Two pieces. Different mediums. Same obsession with precise interaction.</p>
+        <p class="eyebrow"><span class="pulse-dot"></span> Selected work</p>
+        <h2>Two pieces. Different mediums.<br>Same obsession with precise interaction.</h2>
       </header>
 
-      <article class="project ashen">
-        <div class="project-visual" aria-hidden="true">
+      <article class="project ashen" data-reveal>
+        <a class="project-visual" href="./ashen-mouth/" data-cursor="Play">
           <div class="ashen-glow"></div>
-          <span class="project-kicker">01 · Game</span>
-          <h3>ASHEN MOUTH</h3>
-        </div>
+          <div class="visual-grid"></div>
+          <div class="visual-silhouette ashen-sil" aria-hidden="true"></div>
+          <span class="project-kicker">01 · Game · WebGL</span>
+          <h3>ASHEN<br>MOUTH</h3>
+          <span class="visual-cta">Play →</span>
+        </a>
         <div class="project-body">
-          <p class="tag">WebGL · Three.js · microphone stealth</p>
+          <p class="tag">Three.js · microphone stealth · authored house</p>
           <h4>Silence is stealth. The grate is the mouth.</h4>
           <p>
-            First-person listening-horror at 14 Ashen Lane. The Listener hunts by sound,
-            not sight. Find the hush-name. Whisper it at the parlor grate with the damper.
-            Never shout your own name.
+            First-person listening-horror at <em>14 Ashen Lane</em>. The Listener hunts by sound,
+            not sight. Find the hush-name. Whisper it at the parlor grate. Never shout your own name.
           </p>
           <ul class="meta">
-            <li>Vendored Three.js · zero build</li>
-            <li>Mic + keyboard voice fallback</li>
-            <li>Authored house: yard → rooms → cellar</li>
+            <li>Yard → porch → rooms → cellar, hand-authored</li>
+            <li>Mic + V/B/N voice · damper closes on win</li>
+            <li>Kitchen L-run, chimney breast, panel doors, closed stairs</li>
           </ul>
           <div class="actions">
-            <a class="btn primary" href="./ashen-mouth/">Play the game</a>
-            <a class="btn ghost" href="./ashen-mouth/DESIGN.md">Design card</a>
+            <a class="btn primary" href="./ashen-mouth/" data-magnetic>Play the game</a>
+            <a class="btn ghost" href="./ashen-mouth/README.md" data-magnetic>Readme</a>
           </div>
         </div>
       </article>
 
-      <article class="project temper">
-        <div class="project-visual" aria-hidden="true">
+      <article class="project temper" data-reveal>
+        <a class="project-visual" href="./temper/" data-cursor="Forge">
           <div class="temper-embers"></div>
-          <span class="project-kicker">02 · Utility</span>
+          <div class="visual-grid quench"></div>
+          <div class="visual-silhouette temper-sil" aria-hidden="true"></div>
+          <span class="project-kicker">02 · Utility · Local-first</span>
           <h3>TEMPER</h3>
-        </div>
+          <span class="visual-cta">Forge →</span>
+        </a>
         <div class="project-body">
-          <p class="tag">Local-first · Web Audio · intentional friction</p>
+          <p class="tag">Web Audio · on-device heat · intentional friction</p>
           <h4>Cool the message before you send it.</h4>
           <p>
-            A forge for heated words. Paste the angry reply. Hot words glow. Quench,
-            anneal, breathe. Copy unlocks only when the plate is tempered.
-            Meaning stays — scorch doesn’t. Monetizable Pro path framed in-product.
+            A forge for heated words. Paste the angry reply. Hot words glow. Quench, anneal, breathe.
+            Copy unlocks only when the plate is tempered. Meaning stays — scorch doesn’t.
           </p>
           <ul class="meta">
-            <li>On-device heat lexicon · no upload</li>
-            <li>Phrase-aware quench · compare view</li>
-            <li>Vault plaques · smith’s notes</li>
+            <li>Phrase-aware quench · undo · temper hard</li>
+            <li>Compare view · vault plaques · smith’s notes</li>
+            <li>Pro path framed ($5/mo) for monetization</li>
           </ul>
           <div class="actions">
-            <a class="btn primary" href="./temper/">Open the forge</a>
-            <a class="btn ghost" href="./temper/#case">Case study</a>
+            <a class="btn primary" href="./temper/" data-magnetic>Open the forge</a>
+            <a class="btn ghost" href="./temper/#case" data-magnetic>Case study</a>
           </div>
         </div>
       </article>
     </section>
 
-    <section id="about" class="about">
+    <section id="craft" class="craft" data-reveal>
+      <header class="section-head">
+        <p class="eyebrow">Craft principles</p>
+        <h2>What I refuse to ship.</h2>
+      </header>
+      <div class="craft-grid">
+        <article>
+          <h3>No generic chrome</h3>
+          <p>If you can swap the logo and it looks like every other SaaS, it’s dead on arrival.</p>
+        </article>
+        <article>
+          <h3>Friction with agency</h3>
+          <p>Pause can be the product — but you still write. Tools don’t steal your voice.</p>
+        </article>
+        <article>
+          <h3>Feel before features</h3>
+          <p>Steam, hiss, ember pulse, door damp — sensory proof that something happened.</p>
+        </article>
+        <article>
+          <h3>Privacy as structure</h3>
+          <p>Local-first where the words are intimate. No analytics SDK disguised as “insights.”</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="about" class="about" data-reveal>
       <h2>About</h2>
       <p>
-        I care about <em>mechanics you can feel</em> — not dashboards, not purple gradients,
-        not “AI rewrite this.” Games that listen. Tools that make you pause without lecturing.
-        If friction is the feature, it should still be beautiful.
+        I’m <strong>Essam</strong>. I care about <em>mechanics you can feel</em> — not dashboards,
+        not “AI rewrite this,” not empty onboarding walls. Games that listen.
+        Tools that make you pause without lecturing.
       </p>
-      <p class="micro">Available for product / interaction work · portfolio pieces MIT unless noted</p>
+      <div class="proof-row" aria-label="Proof points">
+        <div><b>02</b><span>Shipped pieces</span></div>
+        <div><b>0</b><span>Purple SaaS clones</span></div>
+        <div><b>100%</b><span>Local-first where it matters</span></div>
+      </div>
+      <div class="about-links">
+        <a class="btn primary" href="./temper/" data-magnetic>Try TEMPER</a>
+        <a class="btn ghost" href="./ashen-mouth/" data-magnetic>Play ASHEN MOUTH</a>
+      </div>
     </section>
   </main>
 
   <footer>
-    <span>© Essam</span>
+    <span>© Essam · Interaction craft</span>
     <span>ASHEN MOUTH · TEMPER</span>
   </footer>
   <script type="module" src="./portfolio.js"></script>

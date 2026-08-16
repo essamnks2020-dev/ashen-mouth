@@ -62,6 +62,9 @@ function dressParlor(ctx, quality) {
   // Horizontal crossbars — reads as a real grate mouth
   box(ctx, ctx.mats.iron, 0.02, 0.22, 0, 0.04, 0.03, 0.95, { parent: grate, collide: false });
   box(ctx, ctx.mats.iron, 0.02, -0.22, 0, 0.04, 0.03, 0.95, { parent: grate, collide: false });
+  // Flue throat — dark shaft rising into the breast (reads continuous to roof)
+  box(ctx, ctx.mats.soot, -0.12, 0.95, 0, 0.16, 1.1, 0.55, { parent: grate, collide: false, cast: false });
+  box(ctx, ctx.mats.iron, -0.04, 0.72, 0, 0.03, 0.06, 0.7, { parent: grate, collide: false, cast: false });
   const glow = box(ctx, ctx.mats.ember, -0.06, -0.08, 0, 0.1, 0.28, 0.7, { parent: grate, collide: false, cast: false });
   // Damper plate (animates closed on win via story if it finds grate.userData)
   const damper = box(ctx, ctx.mats.iron, -0.02, 0.38, 0, 0.02, 0.08, 0.85, { parent: grate, collide: false });
@@ -79,8 +82,31 @@ function dressParlor(ctx, quality) {
       ctx.mats.ember.emissiveIntensity = (2.1 + Math.sin(t * 6.5) * 0.5) * open;
       fireLight.intensity = (1.85 + Math.sin(t * 8) * 0.25) * Math.max(0.05, open);
       damper.position.y = 0.38 - (1 - open) * 0.42;
+      // Soft chimney smoke columns
+      if (grate.userData.smoke) {
+        for (let i = 0; i < grate.userData.smoke.length; i++) {
+          const s = grate.userData.smoke[i];
+          s.position.y = 0.45 + ((t * (0.22 + i * 0.035) + i * 0.28) % 2.2);
+          s.material.opacity = 0.055 * open * (1 - (s.position.y - 0.45) / 2.2);
+          s.scale.setScalar(0.65 + (s.position.y - 0.45) * 0.45);
+        }
+      }
     },
   });
+  // Smoke puffs rising into the breast / flue
+  if (quality !== 'low') {
+    const smoke = [];
+    for (let i = 0; i < 8; i++) {
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(0.07 + i * 0.012, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0x9a8f84, transparent: true, opacity: 0.05, depthWrite: false }),
+      );
+      m.position.set(-0.08, 0.5, -0.2 + (i % 4) * 0.1);
+      grate.add(m);
+      smoke.push(m);
+    }
+    grate.userData.smoke = smoke;
+  }
   box(ctx, ctx.mats.wood, X0 + 0.58, 1.58, GRATE.z, 0.36, 0.1, 1.75, { collide: false });
   // Mantel corbels
   box(ctx, ctx.mats.woodDark, X0 + 0.5, 1.42, GRATE.z - 0.55, 0.18, 0.22, 0.14, { collide: false, cast: false });
@@ -127,11 +153,21 @@ function dressParlor(ctx, quality) {
 
 function dressKitchen(ctx) {
   kitchenRun(ctx, 5.28, -2.55, 4.2);
-  // Short return run along the south wall — kitchen reads as an L, not one lonely strip
+  // Short return run along the south wall — full cabinet faces so the L reads as cabinetry
   box(ctx, ctx.mats.woodDark, 4.35, 0.05, 4.55, 1.55, 0.1, 0.56, { collide: false, cast: false });
   box(ctx, ctx.mats.wood, 4.35, 0.48, 4.55, 1.55, 0.76, 0.56, { collide: true });
-  box(ctx, ctx.mats.porcelain, 4.35, 0.9, 4.53, 1.6, 0.05, 0.6, { collide: false });
+  box(ctx, ctx.mats.porcelain, 4.35, 0.9, 4.53, 1.62, 0.05, 0.62, { collide: false });
+  box(ctx, ctx.mats.brass, 4.35, 0.925, 4.22, 1.55, 0.015, 0.015, { collide: false, cast: false });
+  for (let i = 0; i < 3; i++) {
+    const xx = 3.75 + i * 0.5;
+    box(ctx, ctx.mats.woodDark, xx, 0.48, 4.26, 0.42, 0.62, 0.03, { collide: false, cast: false });
+    box(ctx, ctx.mats.wood, xx, 0.48, 4.245, 0.28, 0.42, 0.01, { collide: false, cast: false });
+    box(ctx, ctx.mats.brass, xx, 0.48, 4.24, 0.02, 0.08, 0.02, { collide: false, cast: false });
+  }
   box(ctx, ctx.mats.porcelain, 4.35, 1.18, 4.78, 1.45, 0.42, 0.03, { collide: false, cast: false });
+  // Corner filler so L joint doesn’t read as a gap
+  box(ctx, ctx.mats.woodDark, 5.0, 0.48, 4.55, 0.28, 0.76, 0.28, { collide: false, cast: false });
+  box(ctx, ctx.mats.porcelain, 5.0, 0.9, 4.55, 0.32, 0.05, 0.32, { collide: false, cast: false });
 
   stove(ctx, 5.28, 0, 1.05);
   fridge(ctx, 5.22, 0, 3.85);
@@ -194,6 +230,24 @@ function dressKitchen(ctx) {
   cyl(ctx, ctx.mats.lampShade, 3.6, 2.48, 2.5, 0.08, 0.28, 0.1, { rotX: Math.PI / 2, cast: false });
   ceilingLamp(ctx, 4.55, 2.62, 0.35, { id: 'kitchen', base: 1.25, color: 0xfff2c8, dist: 7 });
   switchPlate(ctx, 3.2, 1.15, Z1 - 0.18, 's', 'kitchen');
+
+  // Shelf props — kitchen should feel lived-in, not empty cabinet kit
+  box(ctx, ctx.mats.woodDark, 4.15, 1.55, -1.85, 0.9, 0.04, 0.22, { collide: false });
+  box(ctx, ctx.mats.woodDark, 4.15, 1.95, -1.85, 0.9, 0.04, 0.22, { collide: false });
+  cyl(ctx, ctx.mats.iron, 3.9, 1.68, -1.85, 0.07, 0.08, 0.18, { cast: false });
+  cyl(ctx, ctx.mats.porcelain, 4.15, 1.7, -1.85, 0.06, 0.07, 0.14, { cast: false });
+  box(ctx, ctx.mats.iron, 4.4, 1.66, -1.85, 0.14, 0.16, 0.14, { collide: false, cast: false });
+  // Hanging utensils
+  for (let i = 0; i < 4; i++) {
+    const zz = 0.2 + i * 0.28;
+    box(ctx, ctx.mats.iron, 4.95, 1.48, zz, 0.02, 0.22, 0.02, { collide: false, cast: false });
+    box(ctx, ctx.mats.iron, 4.95, 1.35, zz, 0.08, 0.02, 0.02, { collide: false, cast: false });
+  }
+  // Floor mat
+  box(ctx, ctx.mats.linen, 4.6, 0.02, 2.55, 0.7, 0.02, 1.1, { collide: false, cast: false });
+  // Window sill jars
+  cyl(ctx, ctx.mats.glass, 5.35, 1.05, 2.55, 0.05, 0.06, 0.12, { cast: false });
+  cyl(ctx, ctx.mats.glass, 5.35, 1.02, 2.75, 0.04, 0.05, 0.1, { cast: false });
 }
 
 function dressDining(ctx) {

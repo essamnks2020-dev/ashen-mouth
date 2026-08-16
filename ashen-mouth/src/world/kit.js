@@ -162,7 +162,9 @@ export function stairs(ctx, spec) {
     const yTop = yLow + rise * (i + 1);
     const z = zBot + dirZ * RUN * i;
     box(ctx, ctx.mats.wood, x, yTop - 0.018, z, w, 0.036, RUN + 0.02, P);
+    // Nosing lip + dark wear strip
     box(ctx, ctx.mats.woodDark, x, yTop - 0.002, z + dirZ * RUN * 0.42, w, 0.02, 0.04, { ...P, cast: false });
+    box(ctx, ctx.mats.brass, x, yTop + 0.006, z + dirZ * RUN * 0.46, w - 0.08, 0.006, 0.012, { ...P, cast: false });
     const prevY = yLow + rise * i;
     // Closed riser face — thin open stringers read as floating slabs.
     box(ctx, ctx.mats.woodDark, x, (prevY + yTop) * 0.5, z - dirZ * (RUN * 0.5 - 0.01), w - 0.02, rise - 0.01, 0.055, P);
@@ -371,6 +373,9 @@ export function makeDoor(ctx, x, y, z, rotY, id, title, startClosed, openSign, o
     box(ctx, ctx.mats.iron, pw * 0.5, 0.12, 0.028, pw - 0.12, 0.14, 0.015, { parent: leaf, cast: false });
     box(ctx, ctx.mats.brass, 0.04, 0.55, 0.03, 0.03, 0.1, 0.02, { parent: leaf, cast: false });
     box(ctx, ctx.mats.brass, 0.04, 1.55, 0.03, 0.03, 0.1, 0.02, { parent: leaf, cast: false });
+    // Mid hinge + latch face plate
+    box(ctx, ctx.mats.brass, 0.04, 1.05, 0.03, 0.03, 0.1, 0.02, { parent: leaf, cast: false });
+    box(ctx, ctx.mats.iron, pw - 0.1, 1.02, 0.028, 0.06, 0.1, 0.012, { parent: leaf, cast: false });
   }
 
   const colW = rotY !== 0 ? 0.16 : 1.02;
@@ -382,10 +387,10 @@ export function makeDoor(ctx, x, y, z, rotY, id, title, startClosed, openSign, o
   };
   ctx.living.push({
     update(dt) {
-      door.open = damp(door.open, door.want, 3.4, dt);
+      door.open = damp(door.open, door.want, 4.2, dt);
       leaf.rotation.y = door.open * door.openAngle;
-      col.alive = door.open < 0.5;
-      col.solid = door.open < 0.5;
+      col.alive = door.open < 0.55;
+      col.solid = door.open < 0.55;
     },
   });
   ctx.interact.push({
@@ -626,6 +631,8 @@ export function kitchenRun(ctx, x, z0, z1) {
   box(ctx, ctx.mats.woodDark, x, 0.05, z, 0.56, 0.1, d, { collide: false, cast: false });
   box(ctx, ctx.mats.wood, x, 0.48, z, 0.56, 0.76, d, { collide: true });
   box(ctx, ctx.mats.porcelain, x - 0.02, 0.9, z, 0.6, 0.05, d + 0.04, { collide: false });
+  // Counter edge trim
+  box(ctx, ctx.mats.brass, x - 0.31, 0.925, z, 0.015, 0.02, d + 0.02, { collide: false, cast: false });
   const doors = Math.max(3, Math.floor(d / 0.72));
   for (let i = 0; i < doors; i++) {
     const t = (i + 0.5) / doors;
@@ -633,9 +640,17 @@ export function kitchenRun(ctx, x, z0, z1) {
     const dh = d / doors - 0.06;
     box(ctx, ctx.mats.woodDark, x - 0.29, 0.48, dz, 0.03, 0.62, Math.max(0.28, dh), { collide: false, cast: false });
     box(ctx, ctx.mats.brass, x - 0.31, 0.48, dz, 0.02, 0.08, 0.02, { collide: false, cast: false });
+    // Panel inset lines
+    box(ctx, ctx.mats.wood, x - 0.305, 0.48, dz, 0.008, 0.48, Math.max(0.18, dh - 0.12), { collide: false, cast: false });
   }
-  // Backsplash tile strip (short, not a floating white slab).
+  // Backsplash tile strip with grout rhythm
   box(ctx, ctx.mats.porcelain, x - 0.26, 1.18, z, 0.03, 0.42, d - 0.1, { collide: false, cast: false });
+  for (let i = 0; i < 8; i++) {
+    const t = (i + 0.5) / 8;
+    box(ctx, ctx.mats.woodDark, x - 0.275, 1.18, z0 + 0.15 + (d - 0.3) * t, 0.01, 0.38, 0.012, { collide: false, cast: false });
+  }
+  // Under-cabinet rail light strip (subtle)
+  box(ctx, ctx.mats.brass, x - 0.28, 1.42, z, 0.02, 0.015, d - 0.4, { collide: false, cast: false });
   box(ctx, ctx.mats.wood, x - 0.05, 1.78, z, 0.36, 0.62, d - 0.35, { collide: true });
   for (let i = 0; i < Math.max(2, doors - 1); i++) {
     const t = (i + 0.5) / Math.max(2, doors - 1);
@@ -643,6 +658,8 @@ export function kitchenRun(ctx, x, z0, z1) {
     box(ctx, ctx.mats.woodDark, x - 0.24, 1.78, dz, 0.03, 0.5, 0.42, { collide: false, cast: false });
     box(ctx, ctx.mats.brass, x - 0.26, 1.78, dz, 0.02, 0.06, 0.02, { collide: false, cast: false });
   }
+  // Crown above wall cabinets
+  box(ctx, ctx.mats.woodDark, x - 0.05, 2.12, z, 0.4, 0.06, d - 0.3, { collide: false, cast: false });
 }
 
 export function stove(ctx, x, y, z) {

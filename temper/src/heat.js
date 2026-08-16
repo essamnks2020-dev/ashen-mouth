@@ -17,32 +17,46 @@ const HOT = {
   idc: 7, idgaf: 10, lol: 2, lmao: 3,
   obviously: 5, clearly: 5, honestly: 3, seriously: 4,
   impossible: 4, completely: 3, totally: 3, literally: 2,
+  selfish: 7, arrogant: 7, incompetent: 8, useless: 8, lazy: 6,
+  coward: 8, hypocrite: 8, betrayal: 8, betrayed: 8, abandoned: 7,
 };
 
-/** Phrase bombs → full cooler sentences/fragments (grammar-safe) */
+/** Phrase bombs → full cooler sentences/fragments (grammar-safe). Longer phrases first by heat. */
 const PHRASE_REWRITES = [
-  { re: /you always/gi, heat: 12, to: ['you often', 'this keeps happening when you'] },
-  { re: /you never/gi, heat: 12, to: ['you rarely', 'I haven’t felt you'] },
+  { re: /kill yourself|\bkys\b|go die/gi, heat: 30, to: ['[removed — I won’t send harm]'] },
   { re: /i hate you/gi, heat: 18, to: ['I’m really hurt by you', 'I’m struggling with us'] },
-  { re: /fuck you/gi, heat: 16, to: ['I’m furious', 'this crossed a line'] },
-  { re: /screw you/gi, heat: 12, to: ['I’m done engaging like this', 'that’s not okay'] },
-  { re: /don't bother(?:\s+texting me back)?/gi, heat: 8, to: ['I need space for now', 'please give me time'] },
-  { re: /dont bother(?:\s+texting me back)?/gi, heat: 8, to: ['I need space for now', 'please give me time'] },
-  { re: /i'?m done/gi, heat: 8, to: ['I’m at my limit', 'I need a pause'] },
-  { re: /we'?re done/gi, heat: 10, to: ['we need distance', 'I can’t continue like this'] },
-  { re: /or else/gi, heat: 10, to: ['or we need to talk differently', 'and I need a change'] },
-  { re: /how dare you/gi, heat: 11, to: ['I can’t believe', 'that really hurt when you'] },
-  { re: /what'?s wrong with you/gi, heat: 11, to: ['what’s going on', 'help me understand'] },
-  { re: /you make me sick/gi, heat: 14, to: ['this is really hard for me', 'I’m struggling with this'] },
-  { re: /i don't care/gi, heat: 7, to: ['I’m stepping back', 'I need to protect my energy'] },
-  { re: /i dont care/gi, heat: 7, to: ['I’m stepping back', 'I need to protect my energy'] },
   { re: /everyone knows (?:you're|you are) a liar/gi, heat: 16, to: ['this isn’t lining up with what I know', 'I’m finding it hard to trust this'] },
+  { re: /fuck you/gi, heat: 16, to: ['I’m furious', 'this crossed a line'] },
+  { re: /you make me sick/gi, heat: 14, to: ['this is really hard for me', 'I’m struggling with this'] },
+  { re: /don't care about anyone but yourself/gi, heat: 14, to: ['aren’t making room for anyone else', 'are focused only on yourself'] },
+  { re: /dont care about anyone but yourself/gi, heat: 14, to: ['aren’t making room for anyone else', 'are focused only on yourself'] },
   { re: /you're a liar/gi, heat: 14, to: ['you’re not being straight with me', 'this doesn’t feel honest'] },
   { re: /you are a liar/gi, heat: 14, to: ['you’re not being straight with me', 'this doesn’t feel honest'] },
-  { re: /everyone knows/gi, heat: 8, to: ['it seems', 'from where I sit'] },
+  { re: /dumped the entire project(?:\s+on me)?/gi, heat: 12, to: ['left the whole project with me', 'handed me everything'] },
   { re: /pathetic excuses/gi, heat: 12, to: ['thin explanations', 'reasons that aren’t landing'] },
-  { re: /what the hell/gi, heat: 8, to: ['seriously', 'I need to understand'] },
-  { re: /kill yourself|\bkys\b|go die/gi, heat: 30, to: ['[removed — I won’t send harm]'] },
+  { re: /you always do this/gi, heat: 13, to: ['you often do this', 'this keeps happening'] },
+  { re: /you always/gi, heat: 12, to: ['you often', 'you keep'] },
+  { re: /you never listen/gi, heat: 13, to: ['you rarely listen', 'I don’t feel heard'] },
+  { re: /you never/gi, heat: 12, to: ['you rarely', 'you seldom'] },
+  { re: /what the hell is wrong with you\??/gi, heat: 12, to: ['what’s going on?', 'help me understand.'] },
+  { re: /what(?:'s| is) wrong with you\??/gi, heat: 11, to: ['what’s going on?', 'help me understand.'] },
+  { re: /screw you/gi, heat: 12, to: ['I’m done engaging like this', 'that’s not okay'] },
+  { re: /how dare you/gi, heat: 11, to: ['I can’t believe', 'that really hurt when you'] },
+  { re: /took credit(?:\s+in the meeting)?/gi, heat: 10, to: ['claimed the work', 'presented it as yours'] },
+  { re: /we'?re done/gi, heat: 10, to: ['we need distance', 'I can’t continue like this'] },
+  { re: /or else/gi, heat: 10, to: ['or we need to talk differently', 'and I need a change'] },
+  { re: /i'?m so sick of your/gi, heat: 10, to: ['I’m worn down by these', 'I’m tired of these'] },
+  { re: /sick of your/gi, heat: 9, to: ['tired of these', 'worn down by these'] },
+  { re: /i quit(?:\s+if this keeps happening)?/gi, heat: 9, to: ['I need to step back if this keeps happening', 'I can’t keep doing this'] },
+  { re: /don't bother(?:\s+texting me back)?/gi, heat: 8, to: ['I need space for now', 'please give me time'] },
+  { re: /dont bother(?:\s+texting me back)?/gi, heat: 8, to: ['I need space for now', 'please give me time'] },
+  { re: /i'?m done(?:\s+pretending this is okay)?/gi, heat: 8, to: ['I’m at my limit', 'I need a pause'] },
+  { re: /what the hell/gi, heat: 8, to: ['seriously', 'frankly'] },
+  { re: /everyone knows/gi, heat: 8, to: ['it seems', 'from where I sit'] },
+  { re: /i don't care/gi, heat: 7, to: ['I’m stepping back', 'I need to protect my energy'] },
+  { re: /i dont care/gi, heat: 7, to: ['I’m stepping back', 'I need to protect my energy'] },
+  { re: /this is insane/gi, heat: 7, to: ['this is a lot', 'this feels extreme'] },
+  { re: /honestly it'?s ridiculous/gi, heat: 7, to: ['honestly this feels off', 'this isn’t sitting right'] },
 ];
 
 /** Single-token coolers — same part of speech, short */
@@ -75,6 +89,17 @@ const COOLERS = {
   nobody: ['few'],
   excuses: ['reasons', 'explanations'],
   hell: ['world', 'earth'],
+  selfish: ['self-focused', 'narrow'],
+  arrogant: ['sure of yourself', 'dismissive'],
+  incompetent: ['unprepared', 'out of depth'],
+  useless: ['unhelpful', 'stuck'],
+  lazy: ['slow', 'checked out'],
+  coward: ['avoidant', 'afraid'],
+  hypocrite: ['inconsistent', 'two-faced'],
+  betrayal: ['breach', 'break'],
+  betrayed: ['hurt', 'blindsided'],
+  abandoned: ['left alone', 'dropped'],
+  listen: ['hear me', 'take this in'],
 };
 
 export function tokenize(text) {
@@ -207,42 +232,59 @@ export function replaceToken(text, tokenIndex, replacement) {
  * One quench pulse: prefer phrase rewrite → token anneal → bangs/caps strip.
  * Returns { text, changed, kind }.
  */
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)] || arr[0];
+}
+
+function matchCase(match, replacement) {
+  if (match[0] && match[0] === match[0].toUpperCase()) {
+    return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+  }
+  return replacement;
+}
+
+/** Tidy leftover punctuation / double spaces after a rewrite */
+function tidy(s) {
+  return s
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/ +([,.!?])/g, '$1')
+    .replace(/([.!?]){2,}/g, '$1')
+    .replace(/\?\?+/g, '?')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function quenchPulse(text) {
-  // 1) Longest phrase rewrite first
+  // 1) Hottest phrase — replace FIRST occurrence only (avoids mangling the whole plate)
   const sorted = [...PHRASE_REWRITES].sort((a, b) => b.heat - a.heat);
   for (const p of sorted) {
     p.re.lastIndex = 0;
-    if (p.re.test(text)) {
-      p.re.lastIndex = 0;
-      const next = text.replace(p.re, (match) => {
-        const opt = p.to[0];
-        // Preserve rough capitalization of first letter
-        if (match[0] && match[0] === match[0].toUpperCase()) {
-          return opt.charAt(0).toUpperCase() + opt.slice(1);
-        }
-        return opt;
-      });
-      if (next !== text) return { text: next, changed: true, kind: 'phrase' };
-    }
+    const m = p.re.exec(text);
+    if (!m) continue;
+    const opt = pick(p.to);
+    const start = m.index;
+    const end = start + m[0].length;
+    const next = tidy(text.slice(0, start) + matchCase(m[0], opt) + text.slice(end));
+    if (next !== tidy(text)) return { text: next, changed: true, kind: 'phrase' };
   }
 
-  // 2) Anneal hottest token with a cooler
+  // 2) Anneal hottest token with a cooler (rotate options)
   const a = analyze(text);
   const hot = [...a.tokens]
     .filter((t) => t.hot && t.coolers?.length)
     .sort((x, y) => y.heat - x.heat)[0];
   if (hot) {
     return {
-      text: replaceToken(text, hot.i, hot.coolers[0]),
+      text: replaceToken(text, hot.i, pick(hot.coolers)),
       changed: true,
       kind: 'token',
     };
   }
 
-  // 3) Soften shouting / bangs
+  // 3) Soften shouting / bangs (one pass)
   let next = text;
   if (/!{2,}/.test(next)) {
-    next = next.replace(/!{2,}/g, '!');
+    next = next.replace(/!{2,}/, '!');
     return { text: next, changed: true, kind: 'bang' };
   }
   if (/\b[A-Z]{3,}\b/.test(next)) {

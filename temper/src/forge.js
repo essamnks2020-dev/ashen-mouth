@@ -25,14 +25,14 @@ export function createForge(canvas) {
   }
 
   function seedEmbers() {
-    embers = Array.from({ length: 48 }, () => ({
+    embers = Array.from({ length: 96 }, () => ({
       x: Math.random() * w,
-      y: h * 0.55 + Math.random() * h * 0.45,
-      r: 0.6 + Math.random() * 2.2,
-      vy: -(0.15 + Math.random() * 0.55),
-      vx: (Math.random() - 0.5) * 0.25,
+      y: h * 0.5 + Math.random() * h * 0.5,
+      r: 0.5 + Math.random() * 2.6,
+      vy: -(0.12 + Math.random() * 0.75),
+      vx: (Math.random() - 0.5) * 0.35,
       life: Math.random(),
-      hue: 20 + Math.random() * 30,
+      hue: Math.random() > 0.82 ? 175 : 14 + Math.random() * 38,
     }));
   }
 

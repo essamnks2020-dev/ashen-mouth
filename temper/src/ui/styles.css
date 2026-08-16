@@ -936,3 +936,29 @@ body.plate-ready .panel {
 .sample-chip:active {
   transform: scale(0.96);
 }
+
+#btn-temper-hard:not(:disabled) {
+  border-color: rgba(234, 88, 12, 0.55);
+  color: var(--molten);
+}
+#btn-temper-hard:not(:disabled):hover {
+  background: rgba(234, 88, 12, 0.15);
+  box-shadow: var(--glow-ember);
+}
+body.plate-ready #heat-pill {
+  animation: readyGlow 1.4s ease-in-out infinite;
+}
+.tools .btn {
+  transition: transform 0.18s var(--ease), box-shadow 0.25s, opacity 0.2s, border-color 0.2s, background 0.2s, color 0.2s;
+}
+#btn-undo:not(:disabled):hover {
+  border-color: rgba(148, 163, 184, 0.55);
+  color: var(--steel);
+}
+.tools {
+  flex-wrap: wrap;
+}
+.plaque .body {
+  white-space: pre-wrap;
+}
+

@@ -29,6 +29,7 @@ const state = {
   selectedToken: null,
   compare: false,
   wasReady: false,
+  history: [],
 };
 
 const canvas = $('#forge-canvas');
@@ -61,6 +62,8 @@ const els = {
   comparePanel: $('#compare-view'),
   deltaPill: $('#delta-pill'),
   btnCompare: $('#btn-compare'),
+  btnUndo: $('#btn-undo'),
+  btnTemperHard: $('#btn-temper-hard'),
 };
 
 els.threshold.textContent = String(state.settings.threshold);
@@ -146,6 +149,8 @@ function renderAnalysis() {
   els.btnQuench.disabled = !hasText || score <= 0;
   els.btnCopy.disabled = !ready;
   els.btnSave.disabled = !hasText;
+  if (els.btnTemperHard) els.btnTemperHard.disabled = !hasText || score <= 0;
+  if (els.btnUndo) els.btnUndo.disabled = state.history.length === 0;
 
   // Ready celebration (once)
   document.body.classList.toggle('plate-ready', ready);
@@ -224,7 +229,18 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-function setText(text, { trackBefore = false, resetCool = false, setOriginal = false } = {}) {
+function pushHistory() {
+  if (!state.text) return;
+  state.history.push({
+    text: state.text,
+    coolOffset: state.coolOffset,
+    heatBefore: state.heatBefore,
+  });
+  if (state.history.length > 40) state.history.shift();
+}
+
+function setText(text, { trackBefore = false, resetCool = false, setOriginal = false, record = false } = {}) {
+  if (record && text !== state.text) pushHistory();
   state.text = text;
   els.message.value = text;
   const a = analyze(text);
@@ -242,8 +258,7 @@ function setText(text, { trackBefore = false, resetCool = false, setOriginal = f
 
 function quenchStep() {
   const pulse = quenchPulse(state.text);
-  if (pulse.changed) setText(pulse.text);
-  // Guaranteed cool even if lexicon is sticky
+  if (pulse.changed) setText(pulse.text, { record: true });
   state.coolOffset = Math.min(100, state.coolOffset + 6);
   renderAnalysis();
   forge.burstSteam(10);
@@ -420,7 +435,7 @@ els.cooler.addEventListener('click', (e) => {
   } else {
     next = replaceToken(state.text, state.selectedToken, rep);
   }
-  setText(next);
+  setText(next, { record: true });
   metalTing();
   closeCooler();
 });
@@ -490,7 +505,7 @@ els.btnSave.addEventListener('click', () => {
   const a = state.analysis;
   const after = effectiveScore(a.score);
   addEntry({
-    textBefore: state.text,
+    textBefore: state.originalText || state.text,
     textAfter: state.text,
     heatBefore: state.heatBefore || a.score,
     heatAfter: after,
@@ -518,6 +533,49 @@ if (els.btnCompare) {
     renderCompare();
   });
 }
+
+if (els.btnUndo) {
+  els.btnUndo.addEventListener('click', () => {
+    const prev = state.history.pop();
+    if (!prev) return;
+    state.coolOffset = prev.coolOffset;
+    state.heatBefore = prev.heatBefore;
+    setText(prev.text);
+    toast('Undone');
+  });
+}
+
+if (els.btnTemperHard) {
+  els.btnTemperHard.addEventListener('click', async () => {
+    if (els.btnTemperHard.disabled) return;
+    unlockAudio();
+    els.btnTemperHard.disabled = true;
+    pushHistory();
+    forge.setQuenching(true);
+    for (let i = 0; i < 14; i++) {
+      const pulse = quenchPulse(state.text);
+      if (pulse.changed) setText(pulse.text);
+      state.coolOffset = Math.min(100, state.coolOffset + 5);
+      renderAnalysis();
+      forge.burstSteam(8);
+      quenchHiss(0.55 + Math.random() * 0.35);
+      await new Promise((r) => setTimeout(r, 75));
+      if (effectiveScore() <= state.settings.threshold) break;
+    }
+    forge.setQuenching(false);
+    metalTing();
+    toast(effectiveScore() <= state.settings.threshold ? 'Hard tempered' : 'Still warm — quench more');
+    renderAnalysis();
+  });
+}
+
+window.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z' && state.screen === 'forge') {
+    if (document.activeElement === els.message && !e.shiftKey) return;
+    e.preventDefault();
+    els.btnUndo?.click();
+  }
+});
 
 els.vaultRoot.addEventListener('click', async (e) => {
   const navBtn = e.target.closest('[data-nav]');
