@@ -1,4 +1,4 @@
-// Portfolio root server — serves /, /temper/, /ashen-mouth/
+// Portfolio root server — serves /, /homeport/, /temper/, /ashen-mouth/
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';

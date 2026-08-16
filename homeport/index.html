@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="description" content="Homeport — fishing logbook on the fisherman's side. Profit, docks, quota." />
+  <meta name="theme-color" content="#061018" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Homeport</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Figtree:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./src/ui/styles.css" />
+</head>
+<body>
+  <canvas id="sea" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <p class="desktop-hint">Homeport · mobile logbook</p>
+
+  <div id="app-shell">
+    <div class="phone">
+      <div class="notch">
+        <span id="clock">06:40</span>
+        <span class="signal"><i class="dot" id="net-dot"></i><span id="net-label">Offshore · offline</span></span>
+      </div>
+
+      <div id="app">
+        <!-- WAKE -->
+        <section id="screen-wake" class="screen active" data-screen="wake">
+          <div class="tide-mark" aria-hidden="true"><b>TIDE</b></div>
+          <h1 class="wake-brand">Home<span>port</span></h1>
+          <p class="wake-line">Built for the boat — not the binder.</p>
+          <p class="wake-sub">
+            Log the haul. See profit after fuel and crew.
+            Watch quota before you’re near the cap. Compare docks while you still have a choice.
+          </p>
+          <button type="button" class="btn btn-primary btn-block" id="btn-enter">Open the log</button>
+        </section>
+
+        <!-- BRIDGE -->
+        <section id="screen-bridge" class="screen" data-screen="bridge">
+          <div class="bar">
+            <div class="mark">Home<em>port</em></div>
+            <button type="button" class="icon-btn" id="btn-vessel" title="Vessel">⚙</button>
+          </div>
+          <div class="scroll">
+            <div class="hero-profit">
+              <p class="label">Last trip · skipper share</p>
+              <p class="amount" id="hero-profit">$0</p>
+              <div class="meta">
+                <span><strong id="hero-trip-name">—</strong></span>
+                <span id="hero-per-hour">—</span>
+                <span id="hero-dock">—</span>
+              </div>
+            </div>
+
+            <div id="quota-alert"></div>
+
+            <p class="section-label">Quota pressure</p>
+            <div class="quota-row" id="quota-row"></div>
+
+            <p class="section-label">Recent trips</p>
+            <div id="trip-list"></div>
+          </div>
+        </section>
+
+        <!-- NEW TRIP -->
+        <section id="screen-trip" class="screen" data-screen="trip">
+          <div class="bar">
+            <button type="button" class="icon-btn" data-back="bridge">←</button>
+            <div class="mark">New trip</div>
+            <span style="width:2.2rem"></span>
+          </div>
+          <div class="stepper" id="trip-steps">
+            <span class="on"></span><span></span><span></span>
+          </div>
+          <div class="scroll" id="trip-form"></div>
+        </section>
+
+        <!-- DOCKS -->
+        <section id="screen-docks" class="screen" data-screen="docks">
+          <div class="bar">
+            <div class="mark">Dock <em>prices</em></div>
+            <button type="button" class="icon-btn" id="btn-refresh-prices" title="Refresh">↻</button>
+          </div>
+          <div class="scroll">
+            <p class="section-label" id="price-species-label">Best price by dock</p>
+            <div class="field">
+              <label for="price-species">Species</label>
+              <select id="price-species"></select>
+            </div>
+            <div id="price-alert"></div>
+            <table class="price-table">
+              <thead><tr><th>Dock</th><th>$/lb</th><th></th></tr></thead>
+              <tbody id="price-body"></tbody>
+            </table>
+            <p class="section-label" style="margin-top:1.25rem">Why this board exists</p>
+            <p style="color:var(--mute);font-size:0.9rem;line-height:1.5;margin:0">
+              Compliance apps tell the government what you caught.
+              Homeport tells you where that catch is worth the most — before you burn fuel to the wrong pier.
+            </p>
+          </div>
+        </section>
+
+        <!-- LEDGER / QUOTA -->
+        <section id="screen-ledger" class="screen" data-screen="ledger">
+          <div class="bar">
+            <div class="mark">Ledger</div>
+            <button type="button" class="icon-btn" id="btn-clear-demo" title="Reset demo">↺</button>
+          </div>
+          <div class="scroll">
+            <p class="section-label">Season quotas</p>
+            <div id="quota-full"></div>
+            <p class="section-label" style="margin-top:1.2rem">All trips</p>
+            <div id="ledger-list"></div>
+          </div>
+        </section>
+
+        <!-- TRIP DETAIL -->
+        <section id="screen-detail" class="screen" data-screen="detail">
+          <div class="bar">
+            <button type="button" class="icon-btn" data-back="bridge">←</button>
+            <div class="mark">Trip</div>
+            <span style="width:2.2rem"></span>
+          </div>
+          <div class="scroll" id="detail-body"></div>
+        </section>
+
+        <!-- VESSEL SETTINGS -->
+        <section id="screen-vessel" class="screen" data-screen="vessel">
+          <div class="bar">
+            <button type="button" class="icon-btn" data-back="bridge">←</button>
+            <div class="mark">Vessel</div>
+            <span style="width:2.2rem"></span>
+          </div>
+          <div class="scroll" id="vessel-form"></div>
+        </section>
+
+        <nav class="tabbar" id="tabbar" hidden>
+          <button type="button" class="tab active" data-nav="bridge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 11.5L12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-8.5z"/></svg>
+            Bridge
+          </button>
+          <button type="button" class="tab" data-nav="trip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+            Trip
+          </button>
+          <button type="button" class="tab" data-nav="docks">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19h16M6 19V9l6-4 6 4v10M9 19v-4h6v4"/></svg>
+            Docks
+          </button>
+          <button type="button" class="tab" data-nav="ledger">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 4h10v16H7zM10 8h4M10 12h4M10 16h3"/></svg>
+            Ledger
+          </button>
+        </nav>
+
+        <div class="toast" id="toast" role="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

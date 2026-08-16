@@ -1,7 +1,7 @@
 {
   "name": "essam-portfolio",
   "version": "1.0.0",
-  "description": "Portfolio — ASHEN MOUTH + TEMPER",
+  "description": "Portfolio — Homeport + ASHEN MOUTH + TEMPER",
   "type": "module",
   "scripts": {
     "start": "node serve.mjs",
