@@ -1,8 +1,8 @@
 # Outset
 
-**Leave light. Arrive ready.**
+**Between home and the world.**
 
-The last thirty seconds before you leave — milky daylight UI, destination weather, live leave-by countdown, travel modes, smart pack presets, streaks, and a door that seals the departure.
+Outset is the calm minute before you leave — destination weather, when to walk out the door, and a pack list that knows *this* day. Not another todo app. A departure companion.
 
 ## Run
 
@@ -11,29 +11,21 @@ node serve.mjs
 # → http://localhost:5173/outset/
 ```
 
-Local-first. No backend. Storage: `outset.v1` (migrates from `threshold.v1`).
+Local-first. Storage: `outset.v1`.
 
-## Ritual
-
-1. **Wake** — cover + logo
-2. **Home** — streak, countdown ring, briefing, week glance
-3. **Out** — travel mode, destination, weather split, layer hint
-4. **Pack** — presets + day/weather-aware checklist
-5. **Go** — open the door, seal, copy “I'm leaving”
-
-## Brand
+## Brand (custom, no emoji)
 
 - Logo: `src/assets/logo.svg`
 - Cover: `src/assets/cover.svg`
+- Icons: `src/ui/icons.js` — stroke SVG system for pack, weather, travel, chrome
+
+## Ritual
+
+Wake → Home (countdown + briefing) → Out (mode + weather) → Pack → Go (seal)
 
 ## QA
 
 ```js
-window.__OUTSET.begin()
-window.__OUTSET.checkAll()
-window.__OUTSET.seal()
 window.__OUTSET.landDemo()
 window.__OUTSET.reset()
 ```
-
-(`window.__THRESHOLD` is an alias.)

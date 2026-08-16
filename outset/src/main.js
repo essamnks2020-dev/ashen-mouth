@@ -24,7 +24,8 @@ import {
   dayStamp,
   uid,
 } from "./lib/store.js";
-import { weatherFor, compareWeather, wxGlyph } from "./lib/weather.js";
+import { weatherFor, compareWeather } from "./lib/weather.js";
+import { icon, wxIcon, modeIcon } from "./ui/icons.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -37,6 +38,22 @@ let ritualDestId = state.selectedDestId;
 const atmos = createAtmos($("#atmos"));
 const toastEl = $("#toast");
 let toastTimer = 0;
+
+function wireChromeIcons() {
+  const map = [
+    ["#btn-share", "share"],
+    ["#btn-hist", "history"],
+    ["#btn-settings", "settings"],
+    ["#back-dest", "back"],
+    ["#back-check", "back"],
+    ["#back-settings", "back"],
+    ["#back-history", "back"],
+  ];
+  for (const [sel, name] of map) {
+    const el = $(sel);
+    if (el) el.innerHTML = icon(name);
+  }
+}
 
 const STEP_LABEL = {
   wake: "Wake",
@@ -179,7 +196,7 @@ function renderHome() {
 
   $("#home-temp").textContent = `${home.temp}°`;
   $("#home-cond").textContent = `${home.label} · feel ${home.feels}° · wind ${home.wind}`;
-  $("#home-wx-icon").textContent = wxGlyph(home.condition);
+  $("#home-wx-icon").innerHTML = wxIcon(home.condition);
 
   updateCountdownOnly();
 
@@ -226,7 +243,7 @@ function renderDest() {
   $("#mode-row").innerHTML = Object.values(TRAVEL_MODES)
     .map(
       (m) =>
-        `<button type="button" class="mode-pill ${state.travelMode === m.id ? "on" : ""}" data-mode="${m.id}">${m.icon} ${m.label}</button>`
+        `<button type="button" class="mode-pill ${state.travelMode === m.id ? "on" : ""}" data-mode="${m.id}"><span class="pill-ico">${modeIcon(m.id)}</span>${m.label}</button>`
     )
     .join("");
 
@@ -242,11 +259,11 @@ function renderDest() {
 
   $("#split-home-temp").textContent = `${home.temp}°`;
   $("#split-home-cond").textContent = home.label;
-  $("#split-home-icon").textContent = wxGlyph(home.condition);
+  $("#split-home-icon").innerHTML = wxIcon(home.condition);
   $("#split-dest-where").textContent = dest.label;
   $("#split-dest-temp").textContent = `${there.temp}°`;
   $("#split-dest-cond").textContent = there.label;
-  $("#split-dest-icon").textContent = wxGlyph(there.condition);
+  $("#split-dest-icon").innerHTML = wxIcon(there.condition);
   $("#wx-compare").innerHTML = compareWeather(home, there).map(escapeHtml).join("<br/>");
   $("#layer-hint").textContent = layerHint(home, there);
 
@@ -290,8 +307,8 @@ function renderCheck() {
             : (it.days || []).map((d) => d.slice(0, 3)).join(" · ");
         return `
         <button type="button" class="check ${on ? "done" : ""}" data-id="${it.id}">
-          <span class="box" aria-hidden="true">${on ? "✓" : ""}</span>
-          <span class="ico" aria-hidden="true">${it.icon || ""}</span>
+          <span class="box" aria-hidden="true">${on ? icon("check") : ""}</span>
+          <span class="ico" aria-hidden="true">${icon(it.icon || "item")}</span>
           <span class="label">${escapeHtml(it.label)}<span class="why">${escapeHtml(why)}</span></span>
         </button>`;
       })
@@ -381,7 +398,7 @@ function renderSettings() {
         .map(
           (it) => `
         <div class="hist">
-          <b>${escapeHtml(it.icon || "")} ${escapeHtml(it.label)}</b>
+          <b>${icon(it.icon || "item")} ${escapeHtml(it.label)}</b>
           <span>${it.weather ? `when ${it.weather}` : (it.days || []).join(", ") || "—"}</span>
           <button type="button" class="btn btn-ghost" data-toggle="${it.id}" style="margin-top:0.4rem;padding:0.45rem 0.7rem;font-size:0.72rem;border-radius:999px">
             ${it.enabled === false ? "Enable" : "Disable"}
@@ -443,7 +460,7 @@ function renderSettings() {
       id: uid(),
       label,
       days: ["sun", "mon", "tue", "wed", "thu", "fri", "sat"],
-      icon: "•",
+      icon: "item",
       enabled: true,
     });
     persist();
@@ -469,7 +486,7 @@ function renderHistory() {
     html += forgot
       .map(
         (f) =>
-          `<div class="hist"><b>${escapeHtml(f.item?.icon || "")} ${escapeHtml(f.item?.label || f.id)}</b><span>${f.count} times</span></div>`
+          `<div class="hist"><b>${f.item ? icon(f.item.icon || "item") : ""} ${escapeHtml(f.item?.label || f.id)}</b><span>${f.count} times</span></div>`
       )
       .join("");
   }
@@ -706,6 +723,7 @@ document.querySelector(".phone").addEventListener("click", (e) => {
 
 tickClock();
 setInterval(tickClock, 1000);
+wireChromeIcons();
 atmos.setWeather(weatherFor("home").condition);
 persist();
 showScreen(state.onboarded ? "home" : "wake");

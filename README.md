@@ -22,9 +22,9 @@ Nothing to install. Node ≥ 18.
 ## Projects
 
 ### Outset (lead)
-Departure companion. Milk + sage UI. Live leave-by, travel modes, smart pack, streaks, door seal.
+Departure companion. Between home and the world. Custom logo/cover/icons (no emoji). Milk + sage.
 Docs: `outset/README.md` · `outset/DESIGN.md` · `outset/CASE-STUDY.md`
-Brand: `outset/src/assets/logo.svg` · `outset/src/assets/cover.svg`
+Brand: `outset/src/assets/logo.svg` · `outset/src/assets/cover.svg` · `outset/src/ui/icons.js`
 
 ### ASHEN MOUTH
 First-person WebGL horror. Silence is stealth. Whisper **MAREN** at the grate.

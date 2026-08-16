@@ -2,22 +2,12 @@
 
 ## Problem
 
-People don't need another todo app. They need the **last thirty seconds** before leaving: weather *there*, leave-by math, what to grab for *this* day — without anxiety chrome.
+Calendars show the meeting. Weather apps show one zip. Checklists never end. The failure is the **door** — the minute between home and the world.
 
-## Name
+## Purpose
 
-**Outset** — the beginning of going out. Softer than "Threshold." Daily. Light.
+**Outset** is a departure companion: weather where you're going, when to leave (mode-aware), what to take for *this* day — then a seal so the moment feels finished.
 
-## Solution
+## Craft rule
 
-Local-first companion:
-
-- Live leave-by countdown (travel mode aware)
-- Home vs destination weather + layer hint
-- Pack presets (work / gym / weekend) + weather items
-- Streaks, week glance, copyable “I'm leaving” status
-- Door seal as the satisfying close
-
-## Why it works for school / portfolio
-
-Clear human job. Distinct brand (milk + sage). Interaction craft without darkness-for-its-own-sake. Honest scope.
+No emoji. Logo, cover, and every icon are custom stroke SVG in our milk/sage language — so the product feels owned, not assembled.

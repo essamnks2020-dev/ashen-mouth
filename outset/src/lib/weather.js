@@ -84,6 +84,5 @@ export function compareWeather(home, dest) {
 }
 
 export function wxGlyph(condition) {
-  const map = { storm: "⚡", rain: "☂", cloud: "☁", haze: "◌", wind: "🌬", clear: "☀" };
-  return map[condition] || "☀";
+  return condition || "clear";
 }

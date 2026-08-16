@@ -1,31 +1,49 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Outset cover">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none" role="img" aria-label="Outset cover">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#FFFBF5"/>
-      <stop offset="40%" stop-color="#F3F0E8"/>
-      <stop offset="100%" stop-color="#D9E8DC"/>
+    <linearGradient id="field" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF8"/>
+      <stop offset="0.4" stop-color="#F4F1E8"/>
+      <stop offset="1" stop-color="#D5E6D9"/>
     </linearGradient>
-    <radialGradient id="glow" cx="62%" cy="38%" r="40%">
-      <stop offset="0%" stop-color="#FFE7B0" stop-opacity="0.85"/>
-      <stop offset="100%" stop-color="#FFE7B0" stop-opacity="0"/>
+    <radialGradient id="sun" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(780 220) rotate(90) scale(320)">
+      <stop stop-color="#FFE7B0" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#FFE7B0" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="sage" cx="18%" cy="80%" r="45%">
-      <stop offset="0%" stop-color="#7BA88A" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#7BA88A" stop-opacity="0"/>
+    <radialGradient id="moss" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(180 520) rotate(90) scale(280)">
+      <stop stop-color="#7BA88A" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#7BA88A" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="leafA" x1="820" y1="180" x2="940" y2="280" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8FBE9B"/>
+      <stop offset="1" stop-color="#3F6B4F"/>
+    </linearGradient>
+    <linearGradient id="leafB" x1="860" y1="220" x2="960" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6FA87E"/>
+      <stop offset="1" stop-color="#2F513C"/>
+    </linearGradient>
   </defs>
-  <rect width="1200" height="630" fill="url(#g)"/>
-  <circle cx="740" cy="240" r="280" fill="url(#glow)"/>
-  <circle cx="180" cy="520" r="260" fill="url(#sage)"/>
-  <!-- large arch -->
-  <path d="M520 520 V290 A140 140 0 0 1 800 290 V520" fill="none" stroke="#3F6B4F" stroke-width="10" stroke-linecap="round" opacity="0.85"/>
-  <path d="M520 520 H800" stroke="#3F6B4F" stroke-width="7" opacity="0.4"/>
+  <rect width="1200" height="630" fill="url(#field)"/>
+  <circle cx="780" cy="220" r="320" fill="url(#sun)"/>
+  <circle cx="180" cy="520" r="280" fill="url(#moss)"/>
+
+  <!-- large doorway -->
+  <path d="M540 520V300c0-66.274 53.726-120 120-120s120 53.726 120 120v220" stroke="#3F6B4F" stroke-width="10" stroke-linecap="round"/>
+  <path d="M660 210v280" stroke="#6FA87E" stroke-width="3.5" stroke-linecap="round" opacity="0.45"/>
+  <path d="M555 520h210" stroke="#3F6B4F" stroke-width="8" stroke-linecap="round" opacity="0.55"/>
+  <path d="M520 535h280" stroke="#3F6B4F" stroke-width="4" stroke-linecap="round" opacity="0.22"/>
+
   <!-- leaf cluster -->
-  <g transform="translate(780 210) rotate(18)">
-    <ellipse cx="0" cy="0" rx="48" ry="18" fill="#6FA87E"/>
-    <ellipse cx="36" cy="22" rx="40" ry="14" fill="#5B8F6C" opacity="0.85"/>
-  </g>
-  <text x="96" y="200" font-family="Georgia, serif" font-size="92" fill="#1C2A22" font-weight="600">Outset</text>
-  <text x="100" y="270" font-family="system-ui, sans-serif" font-size="34" fill="#5A6B5E">Leave light. Arrive ready.</text>
-  <text x="100" y="520" font-family="system-ui, sans-serif" font-size="22" fill="#7A8B7E" letter-spacing="4">THE LAST THIRTY SECONDS</text>
+  <path d="M820 210c36-28 72 8 50 50-28-4-56-24-50-50z" fill="url(#leafA)"/>
+  <path d="M860 245c30-18 58 10 40 40-24-2-44-20-40-40z" fill="url(#leafB)" opacity="0.9"/>
+  <path d="M820 210c18 16 34 32 50 50" stroke="#2F513C" stroke-width="2" opacity="0.35" stroke-linecap="round"/>
+
+  <!-- motes -->
+  <circle cx="500" cy="250" r="4" fill="#3F6B4F" opacity="0.2"/>
+  <circle cx="720" cy="340" r="3" fill="#3F6B4F" opacity="0.18"/>
+  <circle cx="610" cy="180" r="2.5" fill="#3F6B4F" opacity="0.25"/>
+
+  <!-- wordmark -->
+  <text x="88" y="210" font-family="Georgia, 'Times New Roman', serif" font-size="108" font-weight="600" fill="#1C2A22" letter-spacing="-2">Outset</text>
+  <text x="92" y="278" font-family="system-ui, -apple-system, sans-serif" font-size="34" fill="#4E6A58" font-weight="500">Between home and the world.</text>
+  <text x="92" y="520" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#7A8B7E" letter-spacing="5" font-weight="600">LEAVE READY · NOT RUSHED</text>
 </svg>

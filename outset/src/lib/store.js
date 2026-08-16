@@ -9,10 +9,10 @@ const LEGACY = "threshold.v1";
 export const WEEKDAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 export const TRAVEL_MODES = {
-  walk: { id: "walk", label: "Walk", icon: "🚶", factor: 1.35 },
-  transit: { id: "transit", label: "Transit", icon: "🚇", factor: 1 },
-  drive: { id: "drive", label: "Drive", icon: "🚗", factor: 0.72 },
-  bike: { id: "bike", label: "Bike", icon: "🚲", factor: 0.85 },
+  walk: { id: "walk", label: "Walk", icon: "walk", factor: 1.35 },
+  transit: { id: "transit", label: "Transit", icon: "transit", factor: 1 },
+  drive: { id: "drive", label: "Drive", icon: "drive", factor: 0.72 },
+  bike: { id: "bike", label: "Bike", icon: "bike", factor: 0.85 },
 };
 
 export const PRESETS = [
@@ -39,18 +39,18 @@ export const PRESETS = [
 ];
 
 export const DEFAULT_ITEMS = [
-  { id: "keys", label: "Keys", days: WEEKDAYS.slice(), icon: "🔑", essential: true },
-  { id: "phone", label: "Phone", days: WEEKDAYS.slice(), icon: "📱", essential: true },
-  { id: "wallet", label: "Wallet", days: WEEKDAYS.slice(), icon: "💳", essential: true },
-  { id: "transit", label: "Transit card", days: ["mon", "tue", "wed", "thu", "fri"], icon: "🚇" },
-  { id: "laptop", label: "Laptop", days: ["mon", "tue", "wed", "thu", "fri"], icon: "💻" },
-  { id: "gym", label: "Gym bag", days: ["tue", "thu"], icon: "🎒" },
-  { id: "umbrella", label: "Umbrella", days: [], icon: "☂️", weather: "rain" },
-  { id: "charger", label: "Charger", days: ["mon", "wed", "fri"], icon: "🔌" },
-  { id: "headphones", label: "Headphones", days: ["mon", "tue", "wed", "thu", "fri"], icon: "🎧" },
-  { id: "water", label: "Water bottle", days: WEEKDAYS.slice(), icon: "💧" },
-  { id: "coat", label: "Coat / layer", days: [], icon: "🧥", weather: "cold" },
-  { id: "sunscreen", label: "Sunscreen", days: [], icon: "🧴", weather: "hot" },
+  { id: "keys", label: "Keys", days: WEEKDAYS.slice(), icon: "keys", essential: true },
+  { id: "phone", label: "Phone", days: WEEKDAYS.slice(), icon: "phone", essential: true },
+  { id: "wallet", label: "Wallet", days: WEEKDAYS.slice(), icon: "wallet", essential: true },
+  { id: "transit", label: "Transit card", days: ["mon", "tue", "wed", "thu", "fri"], icon: "transit" },
+  { id: "laptop", label: "Laptop", days: ["mon", "tue", "wed", "thu", "fri"], icon: "laptop" },
+  { id: "gym", label: "Gym bag", days: ["tue", "thu"], icon: "gym" },
+  { id: "umbrella", label: "Umbrella", days: [], icon: "umbrella", weather: "rain" },
+  { id: "charger", label: "Charger", days: ["mon", "wed", "fri"], icon: "charger" },
+  { id: "headphones", label: "Headphones", days: ["mon", "tue", "wed", "thu", "fri"], icon: "headphones" },
+  { id: "water", label: "Water bottle", days: WEEKDAYS.slice(), icon: "water" },
+  { id: "coat", label: "Coat / layer", days: [], icon: "coat", weather: "cold" },
+  { id: "sunscreen", label: "Sunscreen", days: [], icon: "sunscreen", weather: "hot" },
 ];
 
 export const DESTINATIONS = [
@@ -103,7 +103,7 @@ export function load() {
       const legacy = localStorage.getItem(LEGACY);
       if (legacy) {
         const parsed = JSON.parse(legacy);
-        const migrated = { ...defaultState(), ...parsed, prefs: { ...defaultState().prefs, ...(parsed.prefs || {}) } };
+        const migrated = normalizeState({ ...defaultState(), ...parsed, prefs: { ...defaultState().prefs, ...(parsed.prefs || {}) } });
         save(migrated);
         return migrated;
       }
@@ -111,7 +111,7 @@ export function load() {
     }
     const parsed = JSON.parse(raw);
     const base = defaultState();
-    return {
+    return normalizeState({
       ...base,
       ...parsed,
       items: Array.isArray(parsed.items) ? parsed.items : base.items,
@@ -121,10 +121,21 @@ export function load() {
       forgot: parsed.forgot && typeof parsed.forgot === "object" ? parsed.forgot : {},
       streaks: { ...base.streaks, ...(parsed.streaks || {}) },
       prefs: { ...base.prefs, ...(parsed.prefs || {}) },
-    };
+    });
   } catch {
     return defaultState();
   }
+}
+
+/** Strip emoji / unknown icons → custom ids */
+function normalizeState(state) {
+  const byId = Object.fromEntries(DEFAULT_ITEMS.map((i) => [i.id, i]));
+  const items = (state.items || []).map((it) => {
+    const def = byId[it.id];
+    const icon = def?.icon || (typeof it.icon === "string" && /^[a-z]+$/.test(it.icon) ? it.icon : "item");
+    return { ...it, icon };
+  });
+  return { ...state, items };
 }
 
 export function save(state) {
