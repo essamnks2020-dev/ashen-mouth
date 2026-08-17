@@ -1,0 +1,8 @@
+{
+  "name": "temper",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node ../serve.mjs", "dev": "node ../serve.mjs" },
+  "engines": { "node": ">=18" }
+}

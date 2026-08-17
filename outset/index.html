@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+    <meta name="description" content="Outset helps you leave home on time with the right things. When to leave, weather where you're going, and a short pack list." />
+    <meta name="theme-color" content="#fbf8f2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Outset — leave home ready</title>
+    <link rel="icon" href="./src/assets/logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./src/assets/logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,450;0,9..144,550;0,9..144,650;1,9..144,450;1,9..144,550;1,9..144,650&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./src/ui/styles.css" />
+  </head>
+  <body>
+    <canvas id="atmos" aria-hidden="true"></canvas>
+    <div class="grain" aria-hidden="true"></div>
+    <p class="desktop-hint">Outset · leave home ready</p>
+
+    <div id="shell">
+      <div class="phone" id="phone" data-sky="dawn">
+        <div class="status">
+          <span id="status-clock">--:--</span>
+          <span id="status-step">Wake</span>
+        </div>
+
+        <div id="app">
+          <section id="screen-wake" class="screen active" data-screen="wake">
+            <div class="cover-art" id="cover-art" aria-hidden="true">
+              <img class="cover-scene" src="./src/assets/cover-portrait.svg" alt="" />
+              <div class="cover-veil"></div>
+              <img class="logo-mark" src="./src/assets/logo.svg" alt="" />
+            </div>
+            <div class="brand-row">
+              <img src="./src/assets/logo.svg" alt="" width="40" height="40" />
+              <span class="brand-chip">Leave-home helper</span>
+            </div>
+            <h1 class="brand">Outset</h1>
+            <p class="lede">Leave home ready — every time.</p>
+            <p class="sub what-is">
+              <strong>What is this?</strong>
+              Open it before you walk out. It tells you <em>when to leave</em>,
+              the <em>weather where you're going</em>, and <em>what to take</em>.
+            </p>
+            <div class="stack">
+              <button type="button" class="btn btn-primary btn-block" id="btn-begin">Open my day</button>
+              <button type="button" class="btn btn-ghost btn-block" id="btn-skip">I'm leaving now →</button>
+            </div>
+          </section>
+
+          <section id="screen-home" class="screen" data-screen="home">
+            <div class="bar">
+              <div class="mark"><img src="./src/assets/logo.svg" alt="" /> Out<em>set</em></div>
+              <div style="display:flex;gap:0.4rem">
+                <button type="button" class="icon-btn" id="btn-share" title="Copy status" aria-label="Copy status"></button>
+                <button type="button" class="icon-btn" id="btn-hist" title="History" aria-label="History"></button>
+                <button type="button" class="icon-btn" id="btn-settings" title="Settings" aria-label="Settings"></button>
+              </div>
+            </div>
+            <div class="scroll">
+              <p class="greeting" id="greeting">Good morning.</p>
+              <p class="when" id="home-when">—</p>
+
+              <div class="stat-row">
+                <div class="stat"><b id="stat-streak">0</b><span>Day streak</span></div>
+                <div class="stat"><b id="stat-today">0</b><span>Left today</span></div>
+                <div class="stat"><b id="stat-best">0</b><span>Best streak</span></div>
+              </div>
+              <p class="week-line" id="week-line">This week: 0 leaves</p>
+
+              <div class="leave-cta" id="leave-cta">
+                <p class="kicker" id="leave-kicker">Next leave</p>
+                <h2 id="leave-headline">You're clear</h2>
+                <p class="hero-time" id="leave-hero-time">—</p>
+                <div class="countdown" id="countdown">
+                  <div class="ring" id="leave-ring" style="--p:0"><i id="leave-ring-label">—</i></div>
+                  <div class="cd-meta">
+                    <strong id="leave-cd-strong">Leave by —</strong>
+                    <span id="leave-cd-sub">Add a weekly routine in Settings</span>
+                  </div>
+                </div>
+                <div class="timeline" id="home-timeline" hidden></div>
+                <button type="button" class="btn btn-primary btn-block" id="btn-start-ritual">Start leaving</button>
+                <button type="button" class="btn btn-ghost btn-block" id="btn-leave-now" style="margin-top:0.45rem">Quick leave (no event)</button>
+              </div>
+
+              <div class="tip-card" id="brief-tip">
+                <b>Today tip</b>
+                <span id="brief-text">—</span>
+              </div>
+
+              <p class="section">Today's leaves</p>
+              <div id="today-plan" class="plan-list"></div>
+
+              <p class="section">This week</p>
+              <div class="week-row" id="week-row"></div>
+
+              <div class="next-card" id="next-card">
+                <div class="label">Up next</div>
+                <div class="title" id="next-title">—</div>
+                <div class="meta" id="next-meta">—</div>
+                <div class="leave-by" id="next-leave">Leave by —</div>
+              </div>
+
+              <p class="section">Outside your door</p>
+              <div class="wx" id="home-wx-card">
+                <div class="where">Home</div>
+                <div class="temp" id="home-temp">—°</div>
+                <div class="cond" id="home-cond">—</div>
+                <div class="icon" id="home-wx-icon" aria-hidden="true"></div>
+              </div>
+            </div>
+          </section>
+
+          <section id="screen-dest" class="screen" data-screen="dest">
+            <div class="bar">
+              <button type="button" class="icon-btn" data-back="home" aria-label="Back" id="back-dest"></button>
+              <div class="mark">Where <em>out</em></div>
+              <span style="width:2.2rem"></span>
+            </div>
+            <div class="scroll">
+              <div class="progress" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+
+              <p class="section">How you're getting there</p>
+              <p class="suggest" id="mode-suggest"></p>
+              <div class="mode-row" id="mode-row"></div>
+
+              <p class="section">Destination</p>
+              <div class="dest-grid" id="dest-grid"></div>
+
+              <p class="section">Now at home · arriving into</p>
+              <div class="weather-split">
+                <div class="wx" data-side="home">
+                  <div class="where">Home now</div>
+                  <div class="temp" id="split-home-temp">—°</div>
+                  <div class="cond" id="split-home-cond">—</div>
+                  <div class="icon" id="split-home-icon"></div>
+                </div>
+                <div class="wx dest-side" data-side="there">
+                  <div class="where" id="split-dest-where">There</div>
+                  <div class="temp" id="split-dest-temp">—°</div>
+                  <div class="cond" id="split-dest-cond">—</div>
+                  <div class="icon" id="split-dest-icon"></div>
+                </div>
+              </div>
+              <div class="hours" id="hour-strip"></div>
+              <div class="compare" id="wx-compare">—</div>
+              <div class="tip-card"><b>Layer</b><span id="layer-hint">—</span></div>
+
+              <div class="timeline" id="dest-timeline"></div>
+              <div class="next-card" id="dest-leave-card">
+                <div class="label">Leave by</div>
+                <div class="title" id="dest-leave-time">—</div>
+                <div class="meta" id="dest-leave-meta">—</div>
+              </div>
+
+              <button type="button" class="btn btn-primary btn-block" id="btn-to-pack">What I need →</button>
+            </div>
+          </section>
+
+          <section id="screen-check" class="screen" data-screen="check">
+            <div class="bar">
+              <button type="button" class="icon-btn" data-back="dest" aria-label="Back" id="back-check"></button>
+              <div class="mark">Pack</div>
+              <span id="check-count" style="font-size:0.75rem;color:var(--mute);font-weight:700">0/0</span>
+            </div>
+            <div class="scroll">
+              <div class="progress" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+              <p class="section">Pack preset</p>
+              <div class="preset-row" id="preset-row"></div>
+              <div class="pack-meter"><i id="pack-fill"></i></div>
+              <p class="section" id="check-day">Today</p>
+              <div class="check-list" id="check-list"></div>
+              <button type="button" class="btn btn-ghost btn-block" id="btn-check-all" style="margin-bottom:0.5rem">Check all due</button>
+              <button type="button" class="btn btn-primary btn-block" id="btn-to-seal" disabled>Step out</button>
+              <button type="button" class="btn btn-ghost btn-block" id="btn-leave-anyway" hidden style="margin-top:0.45rem">Leave anyway (remember misses)</button>
+            </div>
+          </section>
+
+          <section id="screen-seal" class="screen" data-screen="seal">
+            <div class="seal-stage" id="seal-stage">
+              <div class="seal-glow" aria-hidden="true"></div>
+              <div class="seal-shaft" aria-hidden="true"></div>
+              <div class="seal-door" id="seal-door">
+                <span class="door-light"></span>
+                <span class="door-panel"></span>
+                <span class="knob"></span>
+              </div>
+              <div class="seal-burst" aria-hidden="true"></div>
+            </div>
+            <h2 class="seal-title" id="seal-title">Ready when you are.</h2>
+            <p class="seal-sub" id="seal-sub">Everything checked. Open the door.</p>
+            <div class="stack" style="width:100%;max-width:16rem;margin:0 auto">
+              <button type="button" class="btn btn-primary btn-block" id="btn-seal-open">Open the door</button>
+              <button type="button" class="btn btn-ghost btn-block" id="btn-copy-leaving" hidden>Copy leaving status</button>
+              <button type="button" class="btn btn-ghost btn-block" id="btn-again" hidden>Back to my day</button>
+            </div>
+          </section>
+
+          <section id="screen-settings" class="screen" data-screen="settings">
+            <div class="bar">
+              <button type="button" class="icon-btn" data-back="home" aria-label="Back" id="back-settings"></button>
+              <div class="mark">Settings</div>
+              <span style="width:2.2rem"></span>
+            </div>
+            <div class="scroll" id="settings-body"></div>
+          </section>
+
+          <section id="screen-history" class="screen" data-screen="history">
+            <div class="bar">
+              <button type="button" class="icon-btn" data-back="home" aria-label="Back" id="back-history"></button>
+              <div class="mark">Departures</div>
+              <span style="width:2.2rem"></span>
+            </div>
+            <div class="scroll" id="history-body"></div>
+          </section>
+
+          <div class="toast" id="toast" role="status"></div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

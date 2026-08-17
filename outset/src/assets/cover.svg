@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none" role="img" aria-label="Outset cover">
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF8EE"/>
+      <stop offset="0.35" stop-color="#F6EFE0"/>
+      <stop offset="0.7" stop-color="#DCE8DA"/>
+      <stop offset="1" stop-color="#B9D0BC"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(860 160) rotate(90) scale(340)">
+      <stop stop-color="#FFF1C0"/>
+      <stop offset="0.4" stop-color="#F0C56A" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#F0C56A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="inside" x1="760" y1="180" x2="760" y2="540" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF4CC"/>
+      <stop offset="1" stop-color="#3F6B4F"/>
+    </linearGradient>
+    <linearGradient id="leafA" x1="980" y1="160" x2="1120" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A3D0AD"/>
+      <stop offset="1" stop-color="#2F513C"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#field)"/>
+  <circle cx="860" cy="160" r="280" fill="url(#sun)"/>
+  <path d="M-20 430C140 360 260 400 400 430C560 390 720 330 880 380C1020 420 1140 400 1220 440V630H-20V430Z" fill="#8FB89A" opacity="0.35"/>
+
+  <path d="M640 540V270c0-66 54-120 120-120s120 54 120 120v270" fill="url(#inside)" opacity="0.7"/>
+  <path d="M628 545V268c0-73 59-132 132-132s132 59 132 132v277" stroke="#2F513C" stroke-width="12" stroke-linecap="round"/>
+  <path d="M760 156v330" stroke="#FFF8DC" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
+  <path d="M610 545h300" stroke="#2F513C" stroke-width="14" stroke-linecap="round"/>
+  <path d="M580 568h360" stroke="#3F6B4F" stroke-width="7" stroke-linecap="round" opacity="0.4"/>
+
+  <path d="M980 200c48-36 96 12 64 68-36-4-72-32-64-68z" fill="url(#leafA)"/>
+  <path d="M1030 240c40-22 74 14 50 52-30-2-56-28-50-52z" fill="#3F6B4F"/>
+  <path d="M108 168c18-70 8-90 8-90" stroke="#3F6B4F" stroke-width="0"/>
+
+  <circle cx="700" cy="220" r="5" fill="#3F6B4F" opacity="0.2"/>
+  <circle cx="820" cy="300" r="3.5" fill="#FFF8DC" opacity="0.7"/>
+  <circle cx="640" cy="250" r="3" fill="#3F6B4F" opacity="0.18"/>
+
+  <text x="72" y="188" font-family="Georgia, 'Times New Roman', serif" font-size="108" font-weight="600" fill="#1C2A22" letter-spacing="-3">Outset</text>
+  <text x="78" y="248" font-family="Georgia, serif" font-size="32" font-style="italic" fill="#3F6B4F">Leave home ready — every time.</text>
+  <text x="78" y="540" font-family="system-ui, sans-serif" font-size="18" fill="#6A7A6E" letter-spacing="4.5" font-weight="700">WHEN TO LEAVE  ·  WEATHER THERE  ·  WHAT TO TAKE</text>
+</svg>

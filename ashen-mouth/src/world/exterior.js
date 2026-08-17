@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {
-  T, H, H2, X0, X1, Z0, Z1, OX, OZ, WIN_W, WIN_SILL, WIN_HEAD,
+  T, H, H2, X0, X1, Z0, Z1, OX, OZ, WIN_W, WIN_SILL, WIN_HEAD, CHIMNEY,
 } from './plan.js';
 import { box, cyl } from './kit.js';
 
@@ -196,12 +196,15 @@ export function buildRoof(ctx) {
   bg.position.z = Z0 + T * 0.45;
   ctx.root.add(bg);
 
-  // Ridge + chimney
+  // Ridge + chimney (aligned with parlor grate)
   box(ctx, ctx.mats.woodDark, 0, H2 + rise + 0.08, OZ, 0.18, 0.14, d + 0.15, { collide: false });
-  const cx = X0 + 1.25, cz = Z0 + 2.5;
-  box(ctx, ctx.mats.brick, cx, H2 + 1.45, cz, 0.7, 2.9, 0.7, { collide: false, cast: true });
-  box(ctx, ctx.mats.brick, cx, H2 + 2.95, cz, 0.82, 0.18, 0.82, { collide: false, cast: false });
-  box(ctx, ctx.mats.iron, cx, H2 + 3.12, cz, 0.55, 0.12, 0.55, { collide: false, cast: false });
+  const cx = CHIMNEY.x, cz = CHIMNEY.z;
+  box(ctx, ctx.mats.brick, cx, H2 + 1.45, cz, 0.72, 2.9, 0.72, { collide: false, cast: true });
+  box(ctx, ctx.mats.brick, cx, H2 + 2.95, cz, 0.86, 0.18, 0.86, { collide: false, cast: false });
+  box(ctx, ctx.mats.iron, cx, H2 + 3.14, cz, 0.58, 0.14, 0.58, { collide: false, cast: false });
+  // Cap pots — reads as a working flue, not a lonely brick stub
+  cyl(ctx, ctx.mats.iron, cx - 0.14, H2 + 3.32, cz - 0.1, 0.08, 0.09, 0.22, { cast: false });
+  cyl(ctx, ctx.mats.iron, cx + 0.14, H2 + 3.32, cz + 0.1, 0.08, 0.09, 0.22, { cast: false });
   ivy(ctx, cx + 0.4, cz + 0.2, 1.1);
 
   // Foundation / water table
