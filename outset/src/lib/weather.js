@@ -153,7 +153,7 @@ export function hourlyStrip(placeId, hours = 6) {
 export function skyTone(when = new Date(), condition = "clear") {
   if (condition === "rain" || condition === "storm") return "rain";
   const h = when.getHours();
-  if (h < 6 || h >= 21) return "night";
+  if (h < 5 || h >= 21) return "night";
   if (h < 9) return "dawn";
   if (h >= 18) return "dusk";
   return "day";
