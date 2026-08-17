@@ -196,16 +196,7 @@ export async function hydrateWeather() {
 
   let lat = 51.5074;
   let lon = -0.1278;
-  try {
-    const pos = await new Promise((resolve, reject) => {
-      if (!navigator.geolocation) return reject(new Error("no geo"));
-      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 2500, maximumAge: 600000 });
-    });
-    lat = pos.coords.latitude;
-    lon = pos.coords.longitude;
-  } catch {
-    /* default city */
-  }
+  // Default city — no geolocation prompt. Live forecast still hydrates.
 
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
