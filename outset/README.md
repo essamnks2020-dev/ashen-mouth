@@ -34,4 +34,4 @@ node serve.mjs
 
 ## Brand
 
-Custom logo, cover, and icons — no emoji.
+Custom logo, illustrated cover (stoop + light), and icons — no emoji.

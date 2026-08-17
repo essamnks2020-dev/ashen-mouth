@@ -31,8 +31,12 @@ import {
   dayStamp,
   uid,
   WEEKDAYS,
+  suggestPreset,
+  suggestMode,
+  itemWhy,
+  packGroups,
 } from "./lib/store.js";
-import { weatherFor, compareWeather } from "./lib/weather.js";
+import { weatherFor, compareWeather, hourlyStrip, hydrateWeather, skyTone, weatherSource } from "./lib/weather.js";
 import { icon, wxIcon, modeIcon } from "./ui/icons.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -104,19 +108,41 @@ function currentDest() {
 }
 
 function wxPair() {
-  const home = weatherFor("home");
   const dest = currentDest();
-  const there = weatherFor(dest.id);
-  return { home, there, dest };
+  const { ev, travel } = leaveInfoBare(dest);
+  const arriveAt = ev ? new Date(ev.at) : new Date(Date.now() + travel * 60e3);
+  const home = weatherFor("home", new Date());
+  const there = weatherFor(dest.id, arriveAt);
+  return { home, there, dest, arriveAt };
+}
+
+function leaveInfoBare(dest) {
+  const ev = nextEvent(state);
+  const travel = travelMinutes(dest, state.travelMode);
+  const leave = leaveBy(ev, dest, state.prefs, state.travelMode);
+  const mins = leave != null ? minutesUntil(leave) : null;
+  return { ev, leave, mins, travel };
 }
 
 function leaveInfo() {
-  const { dest } = wxPair();
-  const ev = nextEvent(state);
-  const leave = leaveBy(ev, dest, state.prefs, state.travelMode);
-  const mins = leave != null ? minutesUntil(leave) : null;
-  const travel = travelMinutes(dest, state.travelMode);
-  return { ev, dest, leave, mins, travel };
+  const dest = currentDest();
+  return { dest, ...leaveInfoBare(dest) };
+}
+
+function applySky() {
+  const { home } = wxPair();
+  const tone = skyTone(new Date(), home.condition);
+  const phone = $("#phone");
+  if (phone) phone.dataset.sky = tone;
+  atmos.setSky?.(tone);
+}
+
+function timelineHtml(leave, arrive, travel) {
+  return `<div class="tl-stop"><b>Now</b><span>${formatTime(Date.now())}</span></div>
+    <i class="tl-line"></i>
+    <div class="tl-stop on"><b>Leave</b><span>${leave != null ? formatTime(leave) : "—"}</span></div>
+    <i class="tl-line"></i>
+    <div class="tl-stop"><b>Arrive</b><span>${arrive ? formatTime(arrive) : `+${travel}m`}</span></div>`;
 }
 
 function showScreen(name) {
@@ -130,6 +156,7 @@ function showScreen(name) {
 
   const { there } = wxPair();
   atmos.setWeather(there.condition);
+  applySky();
   whoosh();
 
   if (name === "home") renderHome();
@@ -235,16 +262,35 @@ function renderHome() {
   }
 
   $("#home-temp").textContent = `${home.temp}°`;
-  $("#home-cond").textContent = `${home.label} · feel ${home.feels}° · wind ${home.wind}`;
+  $("#home-cond").textContent = `${home.label} · feel ${home.feels}° · wind ${home.wind}${weatherSource() === "live" ? " · live" : ""}`;
   $("#home-wx-icon").innerHTML = wxIcon(home.condition);
 
   updateCountdownOnly();
 
+  const hero = $("#leave-hero-time");
+  if (hero) hero.textContent = leave != null ? formatTime(leave) : "When you want";
+
+  const cta = $("#leave-cta");
+  cta.classList.toggle("urgent", mins != null && mins < 20 && mins >= 0);
+  cta.classList.toggle("late", mins != null && mins < 0);
+
   const headline = $("#leave-headline");
+  const kicker = $("#leave-kicker");
+  if (kicker) kicker.textContent = mins != null && mins < 12 ? "Leave window" : "Next leave";
   if (mins != null && mins < 0) headline.textContent = "You're late — still go ready.";
   else if (mins != null && mins < 15) headline.textContent = "Time to head out soon.";
   else if (ev) headline.textContent = `Next: ${ev.title}`;
   else headline.textContent = "No leave planned — go when you want.";
+
+  const tl = $("#home-timeline");
+  if (tl) {
+    if (ev) {
+      tl.hidden = false;
+      tl.innerHTML = timelineHtml(leave, ev.at, travel);
+    } else {
+      tl.hidden = true;
+    }
+  }
 
   const tips = [];
   tips.push(layerHint(home, there));
@@ -307,13 +353,22 @@ function renderHome() {
 }
 
 function renderDest() {
-  const { home, there, dest } = wxPair();
+  const { home, there, dest, arriveAt } = wxPair();
   const { ev, leave, mins, travel } = leaveInfo();
+  const suggested = suggestMode(there, travel);
+
+  const sug = $("#mode-suggest");
+  if (sug) {
+    sug.textContent =
+      suggested !== state.travelMode
+        ? `Suggested: ${TRAVEL_MODES[suggested]?.label} · ${there.precip ? "wet arrival" : `${travel} min trip`}`
+        : `${TRAVEL_MODES[state.travelMode]?.label} is a good fit for this leave`;
+  }
 
   $("#mode-row").innerHTML = Object.values(TRAVEL_MODES)
     .map(
       (m) =>
-        `<button type="button" class="mode-pill ${state.travelMode === m.id ? "on" : ""}" data-mode="${m.id}"><span class="pill-ico">${modeIcon(m.id)}</span>${m.label}</button>`
+        `<button type="button" class="mode-pill ${state.travelMode === m.id ? "on" : ""}" data-mode="${m.id}"><span class="pill-ico">${modeIcon(m.id)}</span>${m.label}${m.id === suggested ? " ·" : ""}</button>`
     )
     .join("");
 
@@ -330,12 +385,27 @@ function renderDest() {
   $("#split-home-temp").textContent = `${home.temp}°`;
   $("#split-home-cond").textContent = home.label;
   $("#split-home-icon").innerHTML = wxIcon(home.condition);
-  $("#split-dest-where").textContent = dest.label;
+  $("#split-home-temp").closest(".wx")?.setAttribute("data-cond", home.condition);
+  $("#split-dest-where").textContent = `${dest.label} at ${formatTime(arriveAt)}`;
   $("#split-dest-temp").textContent = `${there.temp}°`;
-  $("#split-dest-cond").textContent = there.label;
+  $("#split-dest-cond").textContent = `${there.label}${there.pop ? ` · ${there.pop}% rain` : ""}`;
   $("#split-dest-icon").innerHTML = wxIcon(there.condition);
+  $("#split-dest-temp").closest(".wx")?.setAttribute("data-cond", there.condition);
   $("#wx-compare").innerHTML = compareWeather(home, there).map(escapeHtml).join("<br/>");
   $("#layer-hint").textContent = layerHint(home, there);
+
+  const hours = $("#hour-strip");
+  if (hours) {
+    hours.innerHTML = hourlyStrip(dest.id, 6)
+      .map(
+        (h) =>
+          `<div class="hour ${h.precip || h.pop >= 50 ? "wet" : ""}"><b>${h.temp}°</b><span>${h.hourLabel}</span></div>`
+      )
+      .join("");
+  }
+
+  const destTl = $("#dest-timeline");
+  if (destTl) destTl.innerHTML = timelineHtml(leave, ev?.at || arriveAt, travel);
 
   $("#dest-leave-time").textContent = leave != null ? formatTime(leave) : "—";
   let meta = ev ? `${ev.title} at ${formatTime(ev.at)}` : "No upcoming event";
@@ -367,20 +437,22 @@ function renderCheck() {
   if (!items.length) {
     list.innerHTML = `<p class="sub" style="margin:1rem 0">Nothing due — you're traveling light.</p>`;
   } else {
-    list.innerHTML = items
-      .map((it) => {
-        const on = !!state.checked[it.id];
-        const why = it.weather
-          ? `weather · ${it.weather}`
-          : it.essential
-            ? "every departure"
-            : (it.days || []).map((d) => d.slice(0, 3)).join(" · ");
-        return `
+    const groups = packGroups(items, state, home, there);
+    list.innerHTML = groups
+      .map((g) => {
+        const rows = g.items
+          .map((it) => {
+            const on = !!state.checked[it.id];
+            const why = itemWhy(it, state, home, there);
+            return `
         <button type="button" class="check ${on ? "done" : ""}" data-id="${it.id}">
           <span class="box" aria-hidden="true">${on ? icon("check") : ""}</span>
           <span class="ico" aria-hidden="true">${icon(it.icon || "item")}</span>
           <span class="label">${escapeHtml(it.label)}<span class="why">${escapeHtml(why)}</span></span>
         </button>`;
+          })
+          .join("");
+        return `<div class="pack-group"><p class="section">${escapeHtml(g.label)}</p>${rows}</div>`;
       })
       .join("");
   }
@@ -810,6 +882,9 @@ $("#btn-skip").onclick = () => {
 $("#btn-start-ritual").onclick = () => {
   tap();
   sealed = false;
+  const dest = currentDest();
+  state = { ...state, selectedDestId: dest.id, activePreset: suggestPreset(dest.id) };
+  persist();
   showScreen("dest");
 };
 $("#btn-leave-now").onclick = () => {
@@ -914,7 +989,7 @@ $("#dest-grid")?.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-dest]");
   if (!btn) return;
   ritualDestId = btn.dataset.dest;
-  state = { ...state, selectedDestId: ritualDestId };
+  state = { ...state, selectedDestId: ritualDestId, activePreset: suggestPreset(ritualDestId) };
   const ev = nextEvent(state);
   if (ev) {
     state = {
@@ -951,5 +1026,13 @@ tickClock();
 setInterval(tickClock, 1000);
 wireChromeIcons();
 atmos.setWeather(weatherFor("home").condition);
+applySky();
 persist();
 showScreen(state.onboarded ? "home" : "wake");
+hydrateWeather().then(() => {
+  applySky();
+  if (screen === "home") renderHome();
+  if (screen === "dest") renderDest();
+  if (screen === "check") renderCheck();
+  if (screen === "wake") atmos.setWeather(weatherFor("home").condition);
+});

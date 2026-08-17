@@ -429,6 +429,46 @@ export function layerHint(home, dest) {
   return "Normal clothes are fine.";
 }
 
+export function suggestPreset(destId) {
+  if (destId === "work" || destId === "school") return "workday";
+  if (destId === "gym") return "gymday";
+  if (destId === "cafe" || destId === "friend" || destId === "other") return "weekend";
+  return "full";
+}
+
+export function suggestMode(weather, travelMin) {
+  if (weather?.precip || weather?.condition === "storm") return "transit";
+  if (travelMin <= 12) return "walk";
+  if (travelMin >= 40) return "drive";
+  return "transit";
+}
+
+export function itemWhy(it, state, home, there) {
+  const forgot = state.forgot?.[it.id] || 0;
+  if (forgot >= 1) return `you forget this · ${forgot}×`;
+  if (it.weather === "rain") return there?.precip || home?.precip ? "rain on this leave" : "rain kit";
+  if (it.weather === "cold") return "cold on the way";
+  if (it.weather === "hot") return "warm arrival";
+  if (it.essential) return "by the door · every leave";
+  return (it.days || []).map((d) => d.slice(0, 3)).join(" · ") || "today";
+}
+
+export function packGroups(items, state, home, there) {
+  const door = [];
+  const weather = [];
+  const rest = [];
+  for (const it of items) {
+    if (it.weather) weather.push(it);
+    else if (it.essential) door.push(it);
+    else rest.push(it);
+  }
+  return [
+    { id: "door", label: "By the door", items: door },
+    { id: "weather", label: "For the weather", items: weather },
+    { id: "today", label: "For this leave", items: rest },
+  ].filter((g) => g.items.length);
+}
+
 export function uid() {
   return `os_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 }
